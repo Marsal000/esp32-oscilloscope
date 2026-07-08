@@ -14,6 +14,9 @@
             font-family: 'Roboto', sans-serif;
             overflow: hidden;
             user-select: none;
+            -webkit-user-select: none;
+            height: 100dvh;
+            overscroll-behavior: none;
         }
 
         .font-osd {
@@ -68,23 +71,26 @@
         }
     </style>
 </head>
-<body class="h-screen w-screen flex flex-col md:flex-row">
+<body class="w-screen flex flex-col landscape:flex-row">
 
     <!-- Main Oscilloscope Area -->
-    <main class="flex-1 flex flex-col relative h-full min-w-0">
+    <main class="flex-1 flex flex-col relative h-[60dvh] landscape:h-full min-w-0">
         
         <!-- Top Info Bar -->
         <div class="h-8 bg-[#111111] border-b border-gray-800 flex justify-between items-center px-4 font-osd text-xs text-gray-400">
             <div class="flex gap-6">
                 <span id="top-samplerate">-- kS/s</span>
-                <span>400 pts</span>
+                <span class="hidden sm:inline">400 pts</span>
             </div>
-            <div class="flex gap-6 items-center">
-                <div class="w-24 h-1 bg-gray-600 rounded-full relative">
+            <div class="flex gap-4 items-center">
+                <div class="w-16 h-1 bg-gray-600 rounded-full relative hidden sm:block">
                     <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-3 bg-gray-300"></div>
                 </div>
                 <span id="top-timediv">500us/div</span>
-                <span id="top-trigoffset">+0.0 divs</span>
+                <span id="top-trigoffset" class="hidden sm:inline">+0.0 divs</span>
+                <button id="btn-fullscreen" class="text-gray-500 hover:text-white ml-1 p-1 rounded hover:bg-gray-800" title="Toggle Fullscreen">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
+                </button>
             </div>
         </div>
 
@@ -131,7 +137,7 @@
     </main>
 
     <!-- Right Control Panel -->
-    <aside class="w-full md:w-[320px] bg-[#1e1e1e] border-l border-gray-800 flex flex-col h-full overflow-y-auto">
+    <aside class="w-full landscape:w-[260px] lg:landscape:w-[320px] bg-[#1e1e1e] border-t landscape:border-t-0 landscape:border-l border-gray-800 flex flex-col h-[40dvh] landscape:h-full overflow-y-auto">
         
         <!-- Top Buttons -->
         <div class="flex p-2 gap-2 border-b border-gray-700">
@@ -253,6 +259,15 @@
         const txtRunState = document.getElementById('osd-runstate');
         const txtSampleRate = document.getElementById('top-samplerate');
         const btnRunStop = document.getElementById('btn-runstop');
+
+        // Fullscreen Toggle (Great for Mobile Landscape)
+        document.getElementById('btn-fullscreen').addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(e => console.log(e));
+            } else {
+                document.exitFullscreen();
+            }
+        });
 
         // Resize Canvas
         function resizeCanvas() {
