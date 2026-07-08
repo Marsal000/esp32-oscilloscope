@@ -49,6 +49,24 @@
         .border-active-green { border-bottom: 3px solid #10b981; }
         .border-active-purple { border-bottom: 3px solid #8b5cf6; }
 
+        /* Custom Slider Thumb styling to match Scoppy */
+        #offsetSlider::-webkit-slider-thumb {
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            background: #d1d5db;
+            cursor: pointer;
+            border-radius: 2px;
+        }
+        #offsetSlider::-moz-range-thumb {
+            width: 14px;
+            height: 14px;
+            background: #d1d5db;
+            cursor: pointer;
+            border-radius: 2px;
+            border: none;
+        }
+
         canvas {
             display: block;
             width: 100%;
@@ -68,9 +86,8 @@
                 <span class="hidden sm:inline">400 pts</span>
             </div>
             <div class="flex gap-4 items-center">
-                <div class="w-16 h-1 bg-gray-600 rounded-full relative hidden sm:block">
-                    <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-3 bg-gray-300"></div>
-                </div>
+                <!-- Functional Range Slider -->
+                <input type="range" id="offsetSlider" min="-5" max="5" step="0.1" value="0" class="w-24 h-1 bg-gray-600 appearance-none outline-none hidden sm:block">
                 <span id="top-timediv">500us/div</span>
                 <span id="top-trigoffset" class="hidden sm:inline">+0.0 divs</span>
                 <button id="btn-fullscreen" class="text-gray-500 hover:text-white ml-1 p-1 rounded hover:bg-gray-800" title="Toggle Fullscreen">
@@ -126,8 +143,7 @@
         
         <!-- Top Buttons -->
         <div class="flex p-2 gap-2 border-b border-gray-700 shrink-0">
-            <button id="btn-runstop" class="flex-1 bg-[#2a2a2a] text-white font-bold py-2 text-sm border-active-green hover:bg-[#333]">STOP</button>
-            <button class="flex-1 bg-[#2a2a2a] text-white font-bold py-2 text-sm border-active-purple hover:bg-[#333]">MENU >></button>
+            <button id="btn-runstop" class="w-full bg-[#2a2a2a] text-white font-bold py-2 text-sm border-active-green hover:bg-[#333]">STOP</button>
         </div>
 
         <div class="p-4 flex flex-col gap-6">
@@ -141,9 +157,9 @@
                     <button class="btn-ui text-lg" id="btn-time-plus">+</button>
                 </div>
                 <div class="grid grid-cols-[1fr_2fr_1fr] gap-2">
-                    <button class="btn-ui text-lg">-</button>
-                    <div class="btn-ui bg-[#2a2a2a] pointer-events-none text-gray-500">POSITION</div>
-                    <button class="btn-ui text-lg">+</button>
+                    <button class="btn-ui text-lg" id="btn-hpos-minus">-</button>
+                    <div class="btn-ui bg-[#2a2a2a] pointer-events-none">POSITION</div>
+                    <button class="btn-ui text-lg" id="btn-hpos-plus">+</button>
                 </div>
             </section>
 
@@ -222,6 +238,10 @@
         const voltSettings = [0.1, 0.2, 0.5, 1.0, 2.0];
         let voltIdx = 3; // Default 1.0V / div
         let verticalOffset = 0; // divisions
+
+        // Horizontal Panning
+        let horizontalOffsetDivs = 0; // divisions
+        let lastData = new Uint8Array(BUFFER_SIZE); // Cache for redrawing while paused/panning
 
         // Trigger settings
         let triggerLevelV = 1.65; // Volts
@@ -316,6 +336,7 @@
             if (isPaused) return;
             const data = new Uint8Array(event.target.value.buffer);
             if(data.length === BUFFER_SIZE) {
+                lastData.set(data); // Save to cache for live panning
                 drawWaveform(data);
                 calculateStats(data);
             }
@@ -359,7 +380,9 @@
             let sr = 1000000 / delayUs;
             txtSampleRate.textContent = (sr / 1000).toFixed(1) + " kS/s";
             
-            if(!isPaused) drawGraticule(); // Redraw UI elements on canvas
+            // Redraw cached waveform immediately to show scale changes
+            if (lastData && lastData.length > 0) drawWaveform(lastData);
+            else drawGraticule(); 
         }
 
         function updateRunStateUI() {
@@ -398,12 +421,36 @@
             if(voltIdx < voltSettings.length - 1) { voltIdx++; updateLabels(); }
         });
 
-        // Position Buttons (Frontend only)
+        // Horizontal Position Slider & Sync
+        const offsetSlider = document.getElementById('offsetSlider');
+        function updateHorizontalOffsetUI() {
+            let sign = horizontalOffsetDivs >= 0 ? '+' : '';
+            document.getElementById('top-trigoffset').textContent = sign + horizontalOffsetDivs.toFixed(1) + " divs";
+            offsetSlider.value = horizontalOffsetDivs;
+            drawWaveform(lastData);
+        }
+
+        offsetSlider.addEventListener('input', (e) => {
+            horizontalOffsetDivs = parseFloat(e.target.value);
+            updateHorizontalOffsetUI();
+        });
+
+        // Horizontal Position Buttons
+        document.getElementById('btn-hpos-minus').addEventListener('click', () => {
+            horizontalOffsetDivs = Math.max(-5, horizontalOffsetDivs - 0.1);
+            updateHorizontalOffsetUI();
+        });
+        document.getElementById('btn-hpos-plus').addEventListener('click', () => {
+            horizontalOffsetDivs = Math.min(5, horizontalOffsetDivs + 0.1);
+            updateHorizontalOffsetUI();
+        });
+
+        // Vertical Position Buttons (Frontend only)
         document.getElementById('btn-vpos-minus').addEventListener('click', () => {
-            verticalOffset -= 0.5; drawGraticule();
+            verticalOffset -= 0.5; drawWaveform(lastData);
         });
         document.getElementById('btn-vpos-plus').addEventListener('click', () => {
-            verticalOffset += 0.5; drawGraticule();
+            verticalOffset += 0.5; drawWaveform(lastData);
         });
 
         // Trigger Level
@@ -509,16 +556,24 @@
         }
 
         function drawWaveform(data) {
+            if (!data || data.length === 0) {
+                drawGraticule();
+                return;
+            }
             drawGraticule();
             
             const w = canvas.width;
             const h = canvas.height;
+            const dx = w / hDivs;
             const dy = h / vDivs;
             let voltsPerDiv = voltSettings[voltIdx];
             let pixelPerVolt = dy / voltsPerDiv;
             
             // Center is mapped to 1.65V
             let zeroVoltY = (h/2) + (1.65 * pixelPerVolt) + (verticalOffset * dy);
+            
+            // Calculate Horizontal shift based on slider
+            let xOffset = horizontalOffsetDivs * dx;
 
             ctx.beginPath();
             ctx.strokeStyle = '#fbbf24'; // Scoppy Yellow
@@ -526,7 +581,7 @@
             ctx.lineJoin = 'round';
 
             const sliceWidth = w / data.length;
-            let x = 0;
+            let x = xOffset;
 
             for (let i = 0; i < data.length; i++) {
                 let v = (data[i] / 255.0) * 3.3;
