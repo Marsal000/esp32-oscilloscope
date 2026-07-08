@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Oscilloscope - Scoppy Style</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&display=swap');
+        
+        body {
+            background-color: #000000;
+            color: #d1d5db;
+            font-family: 'Roboto', sans-serif;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .font-osd {
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        /* Custom Scrollbar for the right panel */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e1e1e;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4b5563;
+            border-radius: 4px;
+        }
+
+        /* UI Button Styles */
+        .btn-ui {
+            background-color: #374151;
+            color: #e5e7eb;
+            border-radius: 4px;
+            text-align: center;
+            font-weight: 500;
+            font-size: 0.75rem;
+            transition: background-color 0.1s;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 32px;
+        }
+        .btn-ui:hover { background-color: #4b5563; }
+        .btn-ui:active { background-color: #1f2937; }
+        
+        /* Active States */
+        .tab-active {
+            color: #fbbf24; /* Yellow text for active channel */
+        }
+        .border-active-green {
+            border-bottom: 3px solid #10b981;
+        }
+        .border-active-purple {
+            border-bottom: 3px solid #8b5cf6;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col md:flex-row">
+
+    <!-- Main Oscilloscope Area -->
+    <main class="flex-1 flex flex-col relative h-full min-w-0">
+        
+        <!-- Top Info Bar -->
+        <div class="h-8 bg-[#111111] border-b border-gray-800 flex justify-between items-center px-4 font-osd text-xs text-gray-400">
+            <div class="flex gap-6">
+                <span id="top-samplerate">-- kS/s</span>
+                <span>400 pts</span>
+            </div>
+            <div class="flex gap-6 items-center">
+                <div class="w-24 h-1 bg-gray-600 rounded-full relative">
+                    <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-3 bg-gray-300"></div>
+                </div>
+                <span id="top-timediv">500us/div</span>
+                <span id="top-trigoffset">+0.0 divs</span>
+            </div>
+        </div>
+
+        <!-- Canvas Container -->
+        <div class="flex-1 relative bg-[#0a0a0a]">
+            <canvas id="scopeCanvas"></canvas>
+            
+            <!-- Trigger Status Text (Top Right) -->
+            <div class="absolute top-2 right-4 text-right font-osd text-xs">
+                <div class="text-red-500 font-bold mb-1">▲T</div>
+                <div id="osd-runstate" class="text-gray-300">STOPPED</div>
+            </div>
+
+            <!-- OSD Stats (Bottom Left) -->
+            <div class="absolute bottom-4 left-4 font-osd text-xs leading-tight pointer-events-none">
+                <div class="text-yellow-400 mb-1">CH1</div>
+                <div class="text-gray-300">Vmin: <span id="osd-vmin">+0.00</span></div>
+                <div class="text-gray-300">Vmax: <span id="osd-vmax">+0.00</span></div>
+                <div class="text-gray-300">Vpp:  <span id="osd-vpp">+0.00</span></div>
+                <div class="text-gray-300">Freq: <span id="osd-freq">-- Hz</span></div>
+            </div>
+
+            <!-- Connect Overlay -->
+            <div id="connectOverlay" class="absolute inset-0 bg-black/60 flex items-center justify-center z-50">
+                <div class="bg-[#1e1e1e] border border-gray-700 p-6 rounded shadow-2xl text-center max-w-sm">
+                    <h2 class="text-white text-lg font-bold mb-2">Device Disconnected</h2>
+                    <p class="text-gray-400 text-sm mb-6">Click below to pair with your ESP32 via Web Bluetooth.</p>
+                    <button id="connectBtn" class="bg-gray-100 text-black hover:bg-gray-300 font-bold py-2 px-6 rounded transition w-full">
+                        CONNECT DEVICE
+                    </button>
+                    <p id="connStatus" class="text-xs text-gray-500 mt-4"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Bar -->
+        <div class="h-10 bg-[#111111] border-t border-gray-800 flex items-center px-2 gap-2 font-osd text-xs">
+            <div class="bg-gray-200 text-black px-2 py-1 flex items-center font-bold">Demo <span class="bg-white px-1 ml-1 text-black text-[10px]">OK</span></div>
+            <div class="bg-yellow-400 text-black px-2 py-1 font-bold flex items-center gap-2">CH1 <span id="btm-voltsdiv" class="font-normal text-gray-800">1.00V/div</span></div>
+            <div class="bg-[#333] text-gray-400 px-2 py-1">CH2 <span class="text-gray-500 ml-2">OFF</span></div>
+            <div class="bg-gray-200 text-black px-2 py-1 flex items-center gap-2 font-bold">TRIG <span id="btm-triglevel" class="font-normal text-gray-800">1.65V</span></div>
+            <div class="ml-auto text-gray-500" id="stat-fps">FPS: 0</div>
+        </div>
+    </main>
+
+    <!-- Right Control Panel -->
+    <aside class="w-full md:w-[320px] bg-[#1e1e1e] border-l border-gray-800 flex flex-col h-full overflow-y-auto">
+        
+        <!-- Top Buttons -->
+        <div class="flex p-2 gap-2 border-b border-gray-700">
+            <button id="btn-runstop" class="flex-1 bg-[#2a2a2a] text-white font-bold py-2 text-sm border-active-green hover:bg-[#333]">STOP</button>
+            <button class="flex-1 bg-[#2a2a2a] text-white font-bold py-2 text-sm border-active-purple hover:bg-[#333]">MENU >></button>
+        </div>
+
+        <div class="p-4 flex flex-col gap-6">
+            
+            <!-- Horizontal Section -->
+            <section>
+                <h3 class="text-gray-400 text-xs mb-3">Horizontal</h3>
+                <div class="grid grid-cols-[1fr_2fr_1fr] gap-2 mb-2">
+                    <button class="btn-ui text-lg" id="btn-time-minus">-</button>
+                    <div class="btn-ui bg-[#2a2a2a] pointer-events-none">TIME/DIV</div>
+                    <button class="btn-ui text-lg" id="btn-time-plus">+</button>
+                </div>
+                <div class="grid grid-cols-[1fr_2fr_1fr] gap-2">
+                    <button class="btn-ui text-lg">-</button>
+                    <div class="btn-ui bg-[#2a2a2a] pointer-events-none text-gray-500">POSITION</div>
+                    <button class="btn-ui text-lg">+</button>
+                </div>
+            </section>
+
+            <hr class="border-gray-700">
+
+            <!-- Vertical Section -->
+            <section>
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-gray-400 text-xs">Vertical</h3>
+                    <div class="flex gap-2">
+                        <button class="btn-ui bg-[#2a2a2a] w-12 tab-active border-b-2 border-yellow-400">CH1</button>
+                        <button class="btn-ui bg-[#2a2a2a] w-12 text-gray-500">CH2</button>
+                    </div>
+                </div>
+                <div class="grid grid-cols-[1fr_2fr_1fr] gap-2 mb-2">
+                    <button class="btn-ui text-lg" id="btn-volt-minus">-</button>
+                    <div class="btn-ui bg-[#2a2a2a] pointer-events-none">VOLTS/DIV</div>
+                    <button class="btn-ui text-lg" id="btn-volt-plus">+</button>
+                </div>
+                <div class="grid grid-cols-[1fr_2fr_1fr] gap-2">
+                    <button class="btn-ui text-lg" id="btn-vpos-minus">-</button>
+                    <div class="btn-ui bg-[#2a2a2a] pointer-events-none">POSITION</div>
+                    <button class="btn-ui text-lg" id="btn-vpos-plus">+</button>
+                </div>
+            </section>
+
+            <hr class="border-gray-700">
+
+            <!-- Trigger Section -->
+            <section>
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-gray-400 text-xs">Trigger</h3>
+                    <div class="flex gap-2">
+                        <button class="btn-ui bg-[#2a2a2a] w-12 tab-active border-b-2 border-yellow-400">CH1</button>
+                        <button class="btn-ui bg-[#2a2a2a] w-12 text-gray-500">CH2</button>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-3 gap-2 mb-3">
+                    <button class="btn-ui" id="btn-trig-none">NONE</button>
+                    <button class="btn-ui border-active-green" id="btn-trig-auto">AUTO</button>
+                    <button class="btn-ui" id="btn-trig-norm">NORM</button>
+                </div>
+
+                <div class="grid grid-cols-[1fr_2fr_1fr] gap-2 mb-3">
+                    <button class="btn-ui text-lg" id="btn-trigl-minus">-</button>
+                    <div class="btn-ui bg-[#2a2a2a] pointer-events-none">LEVEL</div>
+                    <button class="btn-ui text-lg" id="btn-trigl-plus">+</button>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <button class="btn-ui border-active-green" id="btn-edge-rise">RISING EDGE</button>
+                    <button class="btn-ui" id="btn-edge-fall">FALLING EDGE</button>
+                </div>
+            </section>
+        </div>
+    </aside>
+
+    <script>
+        // --- Web Bluetooth Variables ---
+        const SERVICE_UUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
+        const RX_UUID = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
+        const TX_UUID = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
+        let rxCharacteristic = null, txCharacteristic = null, bleDevice = null;
+        const BUFFER_SIZE = 400; // Matches ESP32 BLE code
+
+        // --- Scope State & UI Settings ---
+        let isPaused = true; 
+        
+        // Timebase arrays (Microseconds per sample delay sent to ESP32)
+        const timeSettings = [10, 25, 50, 100, 250, 500, 1000, 2500];
+        const timeLabels = ["100us/div", "250us/div", "500us/div", "1ms/div", "2.5ms/div", "5ms/div", "10ms/div", "25ms/div"];
+        let timeIdx = 2; // Default 50us (500us/div)
+
+        // Vertical Scale (Handled purely in frontend rendering)
+        const voltSettings = [0.1, 0.2, 0.5, 1.0, 2.0];
+        let voltIdx = 3; // Default 1.0V / div
+        let verticalOffset = 0; // divisions
+
+        // Trigger settings
+        let triggerLevelV = 1.65; // Volts
+        let currentEdge = 1; // 1 = Rising, 0 = Falling
+
+        // FPS tracking
+        let frameCount = 0;
+        let lastFpsTime = performance.now();
+
+        // --- DOM Elements ---
+        const canvas = document.getElementById('scopeCanvas');
+        const ctx = canvas.getContext('2d');
+        const overlay = document.getElementById('connectOverlay');
+        const connStatus = document.getElementById('connStatus');
+
+        // Text Updates
+        const txtTimeDiv = document.getElementById('top-timediv');
+        const txtVoltsDiv = document.getElementById('btm-voltsdiv');
+        const txtTrigLevel = document.getElementById('btm-triglevel');
+        const txtRunState = document.getElementById('osd-runstate');
+        const txtSampleRate = document.getElementById('top-samplerate');
+        const btnRunStop = document.getElementById('btn-runstop');
+
+        // Resize Canvas
+        function resizeCanvas() {
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+            drawGraticule(); // Redraw grid immediately
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // --- Bluetooth Logic ---
+        document.getElementById('connectBtn').addEventListener('click', async () => {
+            try {
+                connStatus.textContent = "Requesting device...";
+                bleDevice = await navigator.bluetooth.requestDevice({
+                    filters: [{ name: 'ESP32_Scope' }],
+                    optionalServices: [SERVICE_UUID]
+                });
+
+                connStatus.textContent = "Connecting...";
+                bleDevice.addEventListener('gattserverdisconnected', onDisconnect);
+                const server = await bleDevice.gatt.connect();
+                
+                const service = await server.getPrimaryService(SERVICE_UUID);
+                rxCharacteristic = await service.getCharacteristic(RX_UUID);
+                txCharacteristic = await service.getCharacteristic(TX_UUID);
+
+                await txCharacteristic.startNotifications();
+                txCharacteristic.addEventListener('characteristicvaluechanged', handleNotifications);
+
+                overlay.style.display = 'none';
+                isPaused = false;
+                updateRunStateUI();
+                sendAllConfigToESP32();
+                
+            } catch (error) {
+                console.error(error);
+                connStatus.textContent = "Error: " + error.message;
+            }
+        });
+
+        function onDisconnect() {
+            overlay.style.display = 'flex';
+            connStatus.textContent = "Connection lost. Please reconnect.";
+            isPaused = true;
+            updateRunStateUI();
+        }
+
+        function handleNotifications(event) {
+            if (isPaused) return;
+            const data = new Uint8Array(event.target.value.buffer);
+            if(data.length === BUFFER_SIZE) {
+                drawWaveform(data);
+                calculateStats(data);
+            }
+            
+            frameCount++;
+            let now = performance.now();
+            if (now - lastFpsTime >= 1000) {
+                document.getElementById('stat-fps').textContent = `FPS: ${frameCount}`;
+                frameCount = 0;
+                lastFpsTime = now;
+            }
+        }
+
+        async function sendCommand(cmd) {
+            if (rxCharacteristic) {
+                try {
+                    let encoder = new TextEncoder();
+                    await rxCharacteristic.writeValue(encoder.encode(cmd));
+                } catch(e) { console.error("Write error:", e); }
+            }
+        }
+
+        function sendAllConfigToESP32() {
+            sendCommand("T" + timeSettings[timeIdx]);
+            // Convert voltage (0-3.3) to 8-bit (0-255) for ESP32
+            let trig8bit = Math.floor((triggerLevelV / 3.3) * 255);
+            setTimeout(() => sendCommand("L" + trig8bit), 50);
+            setTimeout(() => sendCommand("E" + currentEdge), 100);
+            setTimeout(() => sendCommand("P" + (isPaused ? "1" : "0")), 150);
+        }
+
+        // --- UI Interactions ---
+
+        function updateLabels() {
+            txtTimeDiv.textContent = timeLabels[timeIdx];
+            txtVoltsDiv.textContent = voltSettings[voltIdx].toFixed(2) + "V/div";
+            txtTrigLevel.textContent = triggerLevelV.toFixed(2) + "V";
+            
+            // Calc sample rate approx (ESP32 ADC takes ~9us)
+            let delayUs = timeSettings[timeIdx] + 9; 
+            let sr = 1000000 / delayUs;
+            txtSampleRate.textContent = (sr / 1000).toFixed(1) + " kS/s";
+            
+            if(!isPaused) drawGraticule(); // Redraw UI elements on canvas
+        }
+
+        function updateRunStateUI() {
+            if (isPaused) {
+                btnRunStop.textContent = "RUN";
+                btnRunStop.classList.remove("border-active-green");
+                txtRunState.textContent = "STOPPED";
+                txtRunState.className = "text-red-500";
+            } else {
+                btnRunStop.textContent = "STOP";
+                btnRunStop.classList.add("border-active-green");
+                txtRunState.textContent = "RUNNING - AUTO TRIG";
+                txtRunState.className = "text-gray-300";
+            }
+        }
+
+        btnRunStop.addEventListener('click', () => {
+            isPaused = !isPaused;
+            updateRunStateUI();
+            sendCommand("P" + (isPaused ? "1" : "0"));
+        });
+
+        // Time Buttons
+        document.getElementById('btn-time-minus').addEventListener('click', () => {
+            if(timeIdx > 0) { timeIdx--; updateLabels(); sendCommand("T" + timeSettings[timeIdx]); }
+        });
+        document.getElementById('btn-time-plus').addEventListener('click', () => {
+            if(timeIdx < timeSettings.length - 1) { timeIdx++; updateLabels(); sendCommand("T" + timeSettings[timeIdx]); }
+        });
+
+        // Volts Buttons (Frontend only)
+        document.getElementById('btn-volt-minus').addEventListener('click', () => {
+            if(voltIdx > 0) { voltIdx--; updateLabels(); }
+        });
+        document.getElementById('btn-volt-plus').addEventListener('click', () => {
+            if(voltIdx < voltSettings.length - 1) { voltIdx++; updateLabels(); }
+        });
+
+        // Position Buttons (Frontend only)
+        document.getElementById('btn-vpos-minus').addEventListener('click', () => {
+            verticalOffset -= 0.5; drawGraticule();
+        });
+        document.getElementById('btn-vpos-plus').addEventListener('click', () => {
+            verticalOffset += 0.5; drawGraticule();
+        });
+
+        // Trigger Level
+        document.getElementById('btn-trigl-minus').addEventListener('click', () => {
+            triggerLevelV = Math.max(0, triggerLevelV - 0.1);
+            let trig8bit = Math.floor((triggerLevelV / 3.3) * 255);
+            sendCommand("L" + trig8bit);
+            updateLabels();
+        });
+        document.getElementById('btn-trigl-plus').addEventListener('click', () => {
+            triggerLevelV = Math.min(3.3, triggerLevelV + 0.1);
+            let trig8bit = Math.floor((triggerLevelV / 3.3) * 255);
+            sendCommand("L" + trig8bit);
+            updateLabels();
+        });
+
+        // Trigger Edge Buttons
+        const btnEdgeRise = document.getElementById('btn-edge-rise');
+        const btnEdgeFall = document.getElementById('btn-edge-fall');
+        btnEdgeRise.addEventListener('click', () => {
+            currentEdge = 1;
+            btnEdgeRise.classList.add("border-active-green");
+            btnEdgeFall.classList.remove("border-active-green");
+            sendCommand("E1");
+        });
+        btnEdgeFall.addEventListener('click', () => {
+            currentEdge = 0;
+            btnEdgeFall.classList.add("border-active-green");
+            btnEdgeRise.classList.remove("border-active-green");
+            sendCommand("E0");
+        });
+
+
+        // --- Drawing Engine ---
+        const hDivs = 12; // 12 horizontal divisions
+        const vDivs = 8;  // 8 vertical divisions
+
+        function drawGraticule() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const w = canvas.width;
+            const h = canvas.height;
+            const dx = w / hDivs;
+            const dy = h / vDivs;
+
+            // Draw Grid
+            ctx.beginPath();
+            ctx.strokeStyle = '#222222';
+            ctx.lineWidth = 1;
+            
+            // Vertical lines
+            for(let i = 1; i < hDivs; i++) {
+                ctx.moveTo(i * dx, 0);
+                ctx.lineTo(i * dx, h);
+            }
+            // Horizontal lines
+            for(let i = 1; i < vDivs; i++) {
+                ctx.moveTo(0, i * dy);
+                ctx.lineTo(w, i * dy);
+            }
+            ctx.stroke();
+
+            // Draw Center Axes & Ticks
+            ctx.beginPath();
+            ctx.strokeStyle = '#444444';
+            
+            // Center Horizontal Axis (0V reference if centered)
+            let centerY = h / 2;
+            ctx.moveTo(0, centerY);
+            ctx.lineTo(w, centerY);
+            
+            // Center Vertical Axis
+            let centerX = w / 2;
+            ctx.moveTo(centerX, 0);
+            ctx.lineTo(centerX, h);
+
+            // Tick marks on center horizontal
+            for(let i = 0; i < hDivs * 5; i++) {
+                let tickX = i * (dx / 5);
+                let tickLen = (i % 5 === 0) ? 6 : 3;
+                ctx.moveTo(tickX, centerY - tickLen);
+                ctx.lineTo(tickX, centerY + tickLen);
+            }
+            
+            // Tick marks on center vertical
+            for(let i = 0; i < vDivs * 5; i++) {
+                let tickY = i * (dy / 5);
+                let tickLen = (i % 5 === 0) ? 6 : 3;
+                ctx.moveTo(centerX - tickLen, tickY);
+                ctx.lineTo(centerX + tickLen, tickY);
+            }
+            ctx.stroke();
+
+            // Draw Trigger Level Marker (Yellow Arrow on right side)
+            // Map trigger V to screen Y using current scaling
+            let voltsPerDiv = voltSettings[voltIdx];
+            // By default, center of screen (h/2) is 1.65V (half of 3.3V)
+            let pixelPerVolt = dy / voltsPerDiv;
+            let zeroVoltY = (h/2) + (1.65 * pixelPerVolt) + (verticalOffset * dy);
+            let trigY = zeroVoltY - (triggerLevelV * pixelPerVolt);
+
+            ctx.fillStyle = '#fbbf24'; // Yellow
+            ctx.beginPath();
+            ctx.moveTo(w, trigY);
+            ctx.lineTo(w - 10, trigY - 5);
+            ctx.lineTo(w - 10, trigY + 5);
+            ctx.fill();
+        }
+
+        function drawWaveform(data) {
+            drawGraticule();
+            
+            const w = canvas.width;
+            const h = canvas.height;
+            const dy = h / vDivs;
+            let voltsPerDiv = voltSettings[voltIdx];
+            let pixelPerVolt = dy / voltsPerDiv;
+            
+            // The ESP32 sends 0-255 representing 0-3.3V.
+            // Let's assume the center of the screen is 1.65V to start.
+            let zeroVoltY = (h/2) + (1.65 * pixelPerVolt) + (verticalOffset * dy);
+
+            ctx.beginPath();
+            ctx.strokeStyle = '#fbbf24'; // Scoppy Yellow
+            ctx.lineWidth = 1.5;
+            ctx.lineJoin = 'round';
+
+            const sliceWidth = w / data.length;
+            let x = 0;
+
+            for (let i = 0; i < data.length; i++) {
+                // Convert 8-bit to Volts
+                let v = (data[i] / 255.0) * 3.3;
+                // Map Volts to Y coordinate
+                let y = zeroVoltY - (v * pixelPerVolt);
+
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+                x += sliceWidth;
+            }
+            ctx.stroke();
+        }
+
+        function calculateStats(data) {
+            let max = 0, min = 255;
+            for(let i=0; i<data.length; i++) {
+                if(data[i] > max) max = data[i];
+                if(data[i] < min) min = data[i];
+            }
+            
+            let vMaxReal = (max / 255.0) * 3.3;
+            let vMinReal = (min / 255.0) * 3.3;
+            let vpp = vMaxReal - vMinReal;
+            
+            document.getElementById('osd-vmax').textContent = "+" + vMaxReal.toFixed(2) + "V";
+            document.getElementById('osd-vmin').textContent = "+" + vMinReal.toFixed(2) + "V";
+            document.getElementById('osd-vpp').textContent = "+" + vpp.toFixed(2) + "V";
+
+            // Frequency Estimation
+            let crossings = 0;
+            let firstCrossIdx = -1;
+            let lastCrossIdx = -1;
+            let midPoint = (max + min) / 2;
+            
+            for(let i=1; i<data.length; i++) {
+                if(data[i-1] < midPoint && data[i] >= midPoint) {
+                    if(firstCrossIdx === -1) firstCrossIdx = i;
+                    lastCrossIdx = i;
+                    crossings++;
+                }
+            }
+
+            if (crossings > 1) {
+                let samplesPerCycle = (lastCrossIdx - firstCrossIdx) / (crossings - 1);
+                let timePerSample = (timeSettings[timeIdx] + 9) / 1000000.0; 
+                let freq = 1.0 / (samplesPerCycle * timePerSample);
+                
+                let freqText = freq > 999 ? (freq/1000).toFixed(2) + ' kHz' : Math.round(freq) + ' Hz';
+                document.getElementById('osd-freq').textContent = freqText;
+            } else {
+                document.getElementById('osd-freq').textContent = "<1 Hz";
+            }
+        }
+
+        // Initialize UI labels
+        updateLabels();
+
+    </script>
+</body>
+</html>
