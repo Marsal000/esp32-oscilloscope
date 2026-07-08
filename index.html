@@ -82,6 +82,9 @@
             display: block;
             width: 100%;
             height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
         }
 
         /* Number input hides arrows */
@@ -126,7 +129,7 @@
     <main class="flex-1 flex flex-col relative h-[60dvh] landscape:h-full min-w-0">
         
         <!-- Top Info Bar -->
-        <div class="h-8 bg-[#111111] border-b border-gray-800 flex justify-between items-center px-4 font-osd text-xs text-gray-400">
+        <div class="h-8 shrink-0 bg-[#111111] border-b border-gray-800 flex justify-between items-center px-4 font-osd text-xs text-gray-400">
             <div class="flex gap-6">
                 <span id="top-samplerate">-- kS/s</span>
                 <span class="hidden sm:inline">400 pts</span>
@@ -140,19 +143,19 @@
                 <!-- Clean interactive fullscreen button -->
                 <button id="btn-fullscreen" class="text-gray-400 hover:text-white ml-1 p-1 rounded hover:bg-gray-800 transition-colors" title="Toggle Fullscreen">
                     <svg id="svg-fullscreen" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 3h6m0 0v6m0-6L14 10M9 21H3m0 0v-6m0 6l7-7M3 9V3m0 0h6M3 3l7 7m14 11v-6m0 6h-6m6 0l-7-7" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6 M21 21v-4.8 M21 21h-4.8 M3 16.2V21 M3 21h4.8 M3 21l6-6 M21 7.8V3 M21 3h-4.8 M21 3l-6 6 M3 7.8V3 M3 3h4.8 M3 3l6 6" />
                     </svg>
                 </button>
             </div>
         </div>
 
         <!-- Canvas Container -->
-        <div class="flex-1 relative bg-[#0a0a0a]">
+        <div class="flex-1 relative bg-[#0a0a0a] min-h-0">
             <canvas id="scopeCanvas"></canvas>
             
             <!-- Trigger Status Text (Top Right) -->
             <div class="absolute top-2 right-4 text-right font-osd text-xs pointer-events-none">
-                <div id="osd-runstate" class="text-gray-300">STOPPED</div>
+                <div id="osd-runstate" class="text-gray-500 font-bold">STOPPED</div>
             </div>
 
             <!-- OSD Stats (Bottom Left) -->
@@ -169,7 +172,7 @@
                 <div class="bg-[#1e1e1e] border border-gray-700 p-6 rounded shadow-2xl text-center max-w-sm mx-4">
                     <h2 class="text-white text-lg font-bold mb-2">Device Disconnected</h2>
                     <p class="text-gray-400 text-sm mb-6">Click below to pair with your ESP32 via Web Bluetooth.</p>
-                    <button id="connectBtn" class="bg-gray-100 text-black hover:bg-gray-300 font-bold py-3 px-6 rounded transition w-full shadow-lg">
+                    <button id="connectBtn" class="bg-gray-100 text-black hover:bg-gray-300 font-bold py-3 px-6 rounded transition w-full shadow-lg font-osd">
                         CONNECT DEVICE
                     </button>
                     <p id="connStatus" class="text-xs text-gray-500 mt-4"></p>
@@ -178,11 +181,12 @@
         </div>
 
         <!-- Bottom Bar -->
-        <div class="h-10 bg-[#111111] border-t border-gray-800 flex items-center px-2 gap-2 font-osd text-xs overflow-x-auto whitespace-nowrap">
-            <!-- Interactive Demo/BT Mode Toggle -->
-            <button id="btn-demo-mode" class="bg-yellow-400 text-black px-2 py-1 flex items-center font-bold rounded-sm cursor-pointer transition hover:bg-yellow-300">
-                Demo <span class="bg-white px-1 ml-1 text-black text-[10px] rounded-sm shadow-sm font-osd">ON</span>
-            </button>
+        <div class="h-10 shrink-0 bg-[#111111] border-t border-gray-800 flex items-center px-2 gap-2 font-osd text-xs overflow-x-auto whitespace-nowrap">
+            <!-- Segmented Mode Selector (DEMO vs BLE) -->
+            <div class="flex border border-gray-700 rounded-sm overflow-hidden text-[10px] font-bold shrink-0">
+                <button id="btn-mode-demo" class="px-3 py-1 transition-all focus:outline-none">DEMO</button>
+                <button id="btn-mode-ble" class="px-3 py-1 transition-all focus:outline-none">BLE</button>
+            </div>
             <div class="bg-yellow-400 text-black px-2 py-1 font-bold flex items-center gap-2 rounded-sm">CH1 <span id="btm-voltsdiv" class="font-normal text-gray-800">1.00V/div</span></div>
             <div class="bg-[#333] text-gray-400 px-2 py-1 rounded-sm">CH2 <span class="text-gray-500 ml-2">OFF</span></div>
             <div class="bg-gray-200 text-black px-2 py-1 flex items-center gap-2 font-bold rounded-sm">TRIG <span id="btm-triglevel" class="font-normal text-gray-800">1.65V</span></div>
@@ -194,24 +198,24 @@
     <aside class="w-full landscape:w-[260px] lg:landscape:w-[320px] bg-[#1e1e1e] border-t landscape:border-t-0 landscape:border-l border-gray-800 flex flex-col h-[40dvh] landscape:h-full overflow-y-auto">
         
         <!-- Top Buttons -->
-        <div class="flex p-2 gap-2 border-b border-gray-700 shrink-0">
-            <button id="btn-runstop" class="w-full bg-[#2a2a2a] text-white font-bold py-2 text-sm border-active-green hover:bg-[#333]">STOP</button>
+        <div class="flex p-4 pb-2 shrink-0">
+            <button id="btn-runstop" class="w-full bg-[#1a1a1a] text-gray-400 border border-gray-700 rounded-sm font-bold py-2 text-sm transition-all hover:bg-[#222] hover:text-white">RUN</button>
         </div>
 
-        <div class="p-4 flex flex-col gap-6">
+        <div class="p-4 pt-2 flex flex-col gap-6">
             
             <!-- Horizontal Section -->
             <section>
                 <h3 class="text-gray-400 text-xs mb-3">Horizontal</h3>
-                <div class="grid grid-cols-[1fr_2fr_1fr] gap-2 mb-2">
-                    <button class="btn-ui text-lg" id="btn-time-minus">-</button>
-                    <button class="btn-ui bg-[#2a2a2a] hover:bg-[#333] transition" id="btn-time-val">TIME/DIV</button>
-                    <button class="btn-ui text-lg" id="btn-time-plus">+</button>
+                <div class="flex border border-gray-700 rounded-sm overflow-hidden h-8 mb-2">
+                    <button class="w-10 bg-[#1a1a1a] text-gray-400 hover:bg-[#333] hover:text-white transition text-lg flex items-center justify-center" id="btn-time-minus">-</button>
+                    <button class="flex-1 bg-[#222] hover:bg-[#333] transition text-xs font-bold text-gray-300 border-x border-gray-700 flex items-center justify-center" id="btn-time-val">TIME/DIV</button>
+                    <button class="w-10 bg-[#1a1a1a] text-gray-400 hover:bg-[#333] hover:text-white transition text-lg flex items-center justify-center" id="btn-time-plus">+</button>
                 </div>
-                <div class="grid grid-cols-[1fr_2fr_1fr] gap-2">
-                    <button class="btn-ui text-lg" id="btn-hpos-minus">-</button>
-                    <button class="btn-ui bg-[#2a2a2a] hover:bg-[#333] transition" id="btn-hpos-val">POSITION</button>
-                    <button class="btn-ui text-lg" id="btn-hpos-plus">+</button>
+                <div class="flex border border-gray-700 rounded-sm overflow-hidden h-8">
+                    <button class="w-10 bg-[#1a1a1a] text-gray-400 hover:bg-[#333] hover:text-white transition text-lg flex items-center justify-center" id="btn-hpos-minus">-</button>
+                    <button class="flex-1 bg-[#222] hover:bg-[#333] transition text-xs font-bold text-gray-300 border-x border-gray-700 flex items-center justify-center" id="btn-hpos-val">POSITION</button>
+                    <button class="w-10 bg-[#1a1a1a] text-gray-400 hover:bg-[#333] hover:text-white transition text-lg flex items-center justify-center" id="btn-hpos-plus">+</button>
                 </div>
             </section>
 
@@ -221,20 +225,20 @@
             <section>
                 <div class="flex justify-between items-center mb-3">
                     <h3 class="text-gray-400 text-xs">Vertical</h3>
-                    <div class="flex gap-2">
-                        <button class="btn-ui bg-[#2a2a2a] w-12 tab-active border-b-2 border-yellow-400">CH1</button>
-                        <button class="btn-ui bg-[#2a2a2a] w-12 text-gray-500">CH2</button>
+                    <div class="flex border border-gray-700 rounded-sm overflow-hidden text-[10px] font-bold w-24 h-6">
+                        <button class="flex-1 bg-yellow-400 text-black">CH1</button>
+                        <button class="flex-1 bg-[#1a1a1a] text-gray-500 hover:bg-[#222]">CH2</button>
                     </div>
                 </div>
-                <div class="grid grid-cols-[1fr_2fr_1fr] gap-2 mb-2">
-                    <button class="btn-ui text-lg" id="btn-volt-minus">-</button>
-                    <button class="btn-ui bg-[#2a2a2a] hover:bg-[#333] transition" id="btn-volt-val">VOLTS/DIV</button>
-                    <button class="btn-ui text-lg" id="btn-volt-plus">+</button>
+                <div class="flex border border-gray-700 rounded-sm overflow-hidden h-8 mb-2">
+                    <button class="w-10 bg-[#1a1a1a] text-gray-400 hover:bg-[#333] hover:text-white transition text-lg flex items-center justify-center" id="btn-volt-minus">-</button>
+                    <button class="flex-1 bg-[#222] hover:bg-[#333] transition text-xs font-bold text-gray-300 border-x border-gray-700 flex items-center justify-center" id="btn-volt-val">VOLTS/DIV</button>
+                    <button class="w-10 bg-[#1a1a1a] text-gray-400 hover:bg-[#333] hover:text-white transition text-lg flex items-center justify-center" id="btn-volt-plus">+</button>
                 </div>
-                <div class="grid grid-cols-[1fr_2fr_1fr] gap-2">
-                    <button class="btn-ui text-lg" id="btn-vpos-minus">-</button>
-                    <button class="btn-ui bg-[#2a2a2a] hover:bg-[#333] transition" id="btn-vpos-val">POSITION</button>
-                    <button class="btn-ui text-lg" id="btn-vpos-plus">+</button>
+                <div class="flex border border-gray-700 rounded-sm overflow-hidden h-8">
+                    <button class="w-10 bg-[#1a1a1a] text-gray-400 hover:bg-[#333] hover:text-white transition text-lg flex items-center justify-center" id="btn-vpos-minus">-</button>
+                    <button class="flex-1 bg-[#222] hover:bg-[#333] transition text-xs font-bold text-gray-300 border-x border-gray-700 flex items-center justify-center" id="btn-vpos-val">POSITION</button>
+                    <button class="w-10 bg-[#1a1a1a] text-gray-400 hover:bg-[#333] hover:text-white transition text-lg flex items-center justify-center" id="btn-vpos-plus">+</button>
                 </div>
             </section>
 
@@ -244,27 +248,27 @@
             <section>
                 <div class="flex justify-between items-center mb-3">
                     <h3 class="text-gray-400 text-xs">Trigger</h3>
-                    <div class="flex gap-2">
-                        <button class="btn-ui bg-[#2a2a2a] w-12 tab-active border-b-2 border-yellow-400">CH1</button>
-                        <button class="btn-ui bg-[#2a2a2a] w-12 text-gray-500">CH2</button>
+                    <div class="flex border border-gray-700 rounded-sm overflow-hidden text-[10px] font-bold w-24 h-6">
+                        <button class="flex-1 bg-yellow-400 text-black">CH1</button>
+                        <button class="flex-1 bg-[#1a1a1a] text-gray-500 hover:bg-[#222]">CH2</button>
                     </div>
                 </div>
                 
-                <div class="grid grid-cols-3 gap-2 mb-3">
-                    <button class="btn-ui" id="btn-trig-none">NONE</button>
-                    <button class="btn-ui border-active-green" id="btn-trig-auto">AUTO</button>
-                    <button class="btn-ui" id="btn-trig-norm">NORM</button>
+                <div class="flex border border-gray-700 rounded-sm overflow-hidden text-[10px] font-bold mb-3 h-8">
+                    <button class="flex-1 bg-[#1a1a1a] text-gray-500 hover:bg-[#222] transition" id="btn-trig-none">NONE</button>
+                    <button class="flex-1 bg-yellow-400 text-black transition border-x border-gray-700" id="btn-trig-auto">AUTO</button>
+                    <button class="flex-1 bg-[#1a1a1a] text-gray-500 hover:bg-[#222] transition" id="btn-trig-norm">NORM</button>
                 </div>
 
-                <div class="grid grid-cols-[1fr_2fr_1fr] gap-2 mb-3">
-                    <button class="btn-ui text-lg" id="btn-trigl-minus">-</button>
-                    <button class="btn-ui bg-[#2a2a2a] hover:bg-[#333] transition" id="btn-trigl-val">LEVEL</button>
-                    <button class="btn-ui text-lg" id="btn-trigl-plus">+</button>
+                <div class="flex border border-gray-700 rounded-sm overflow-hidden h-8 mb-3">
+                    <button class="w-10 bg-[#1a1a1a] text-gray-400 hover:bg-[#333] hover:text-white transition text-lg flex items-center justify-center" id="btn-trigl-minus">-</button>
+                    <button class="flex-1 bg-[#222] hover:bg-[#333] transition text-xs font-bold text-gray-300 border-x border-gray-700 flex items-center justify-center" id="btn-trigl-val">LEVEL</button>
+                    <button class="w-10 bg-[#1a1a1a] text-gray-400 hover:bg-[#333] hover:text-white transition text-lg flex items-center justify-center" id="btn-trigl-plus">+</button>
                 </div>
 
-                <div class="grid grid-cols-2 gap-2">
-                    <button class="btn-ui border-active-green" id="btn-edge-rise">RISING EDGE</button>
-                    <button class="btn-ui" id="btn-edge-fall">FALLING EDGE</button>
+                <div class="flex border border-gray-700 rounded-sm overflow-hidden text-[10px] font-bold h-8">
+                    <button class="flex-1 bg-yellow-400 text-black transition border-r border-gray-700" id="btn-edge-rise">RISING EDGE</button>
+                    <button class="flex-1 bg-[#1a1a1a] text-gray-500 hover:bg-[#222] transition" id="btn-edge-fall">FALLING EDGE</button>
                 </div>
             </section>
         </div>
@@ -279,18 +283,22 @@
         const BUFFER_SIZE = 400;
 
         // --- Scope State & UI Settings ---
-        let isPaused = false; 
+        let isPaused = true; // Default to STOPPED when first opened
         let isDemoMode = true; // Default to Demo Mode
         let demoInterval = null;
         let demoPhaseDrift = 0;
+        let hasReceivedData = false; // Prevents rendering wave until actively running
         
         // Scope core values
         let timebaseUs = 50; 
         let voltsPerDiv = 1.0; 
         let verticalOffset = 0; // divisions
         let horizontalOffsetDivs = 0; // divisions
+        
+        // Trigger Settings
         let triggerLevelV = 1.65; // Volts
         let currentEdge = 1; // 1 = Rising, 0 = Falling
+        let triggerMode = 1; // 0 = NONE, 1 = AUTO, 2 = NORM
 
         // Arrays for standard stepping controls
         const timeSettings = [10, 25, 50, 100, 250, 500, 1000, 2500, 5000];
@@ -322,14 +330,22 @@
         const txtRunState = document.getElementById('osd-runstate');
         const txtSampleRate = document.getElementById('top-samplerate');
         const btnRunStop = document.getElementById('btn-runstop');
-        const btnDemoMode = document.getElementById('btn-demo-mode');
         const btnFullscreen = document.getElementById('btn-fullscreen');
         const svgFullscreen = document.getElementById('svg-fullscreen');
         const txtTrigOffset = document.getElementById('top-trigoffset');
 
+        // Segmented Mode Selector Elements
+        const btnModeDemo = document.getElementById('btn-mode-demo');
+        const btnModeBle = document.getElementById('btn-mode-ble');
+
+        // Trigger Mode Buttons
+        const btnTrigNone = document.getElementById('btn-trig-none');
+        const btnTrigAuto = document.getElementById('btn-trig-auto');
+        const btnTrigNorm = document.getElementById('btn-trig-norm');
+
         // Responsive clean SVG paths for fullscreen
-        const pathExpand = "M15 3h6m0 0v6m0-6L14 10M9 21H3m0 0v-6m0 6l7-7M3 9V3m0 0h6M3 3l7 7m14 11v-6m0 6h-6m6 0l-7-7";
-        const pathShrink = "M4 14h6m0 0v6m0-6l-7 7M20 10h-6m0 0V4m0 6l7-7M4 10h6m0 0V4m0 6L3 3m17 11h-6m0 0v6m0-6l7 7";
+        const pathExpand = "M21 21l-6-6 M21 21v-4.8 M21 21h-4.8 M3 16.2V21 M3 21h4.8 M3 21l6-6 M21 7.8V3 M21 3h-4.8 M21 3l-6 6 M3 7.8V3 M3 3h4.8 M3 3l6 6";
+        const pathShrink = "M15 15l6 6 M15 15v4.8 M15 15h4.8 M9 15v4.8 M9 15H4.2 M9 15l-6 6 M15 9V4.2 M15 9h4.8 M15 9l6-6 M9 9V4.2 M9 9H4.2 M9 9L3 3";
 
         document.addEventListener('fullscreenchange', () => {
             const path = svgFullscreen.querySelector('path');
@@ -379,14 +395,31 @@
             // Trigger simulation
             let trig8bit = Math.floor((triggerLevelV / 3.3) * 255);
             let trigOffset = (trig8bit - 127) / 80; 
+            let isTriggerValid = (trigOffset >= -1 && trigOffset <= 1);
             
             let startPhase = 0;
-            if (trigOffset >= -1 && trigOffset <= 1) {
-                startPhase = Math.asin(trigOffset);
-                if (currentEdge === 0) startPhase = Math.PI - startPhase; // Falling edge
-            } else {
+            
+            if (triggerMode === 0) {
+                // NONE: Always Free run 
                 demoPhaseDrift += 0.15;
                 startPhase = demoPhaseDrift;
+            } else if (triggerMode === 2) {
+                // NORM: Only update if a valid trigger exists, otherwise freeze
+                if (isTriggerValid) {
+                    startPhase = Math.asin(trigOffset);
+                    if (currentEdge === 0) startPhase = Math.PI - startPhase; 
+                } else {
+                    return; // FREEZE! Do not render new data.
+                }
+            } else {
+                // AUTO: Lock if valid, Free run if invalid
+                if (isTriggerValid) {
+                    startPhase = Math.asin(trigOffset);
+                    if (currentEdge === 0) startPhase = Math.PI - startPhase; 
+                } else {
+                    demoPhaseDrift += 0.15;
+                    startPhase = demoPhaseDrift;
+                }
             }
 
             for(let i = 0; i < BUFFER_SIZE; i++) {
@@ -395,6 +428,7 @@
                 data[i] = val;
             }
             
+            hasReceivedData = true;
             lastData.set(data);
             drawWaveform(data);
             calculateStats(data);
@@ -410,11 +444,11 @@
 
         function updateDemoUI() {
             if (isDemoMode) {
-                btnDemoMode.className = "bg-yellow-400 text-black px-2 py-1 flex items-center font-bold rounded-sm cursor-pointer transition hover:bg-yellow-300";
-                btnDemoMode.innerHTML = `Demo <span class="bg-white px-1 ml-1 text-black text-[10px] rounded-sm shadow-sm font-osd">ON</span>`;
-                overlay.style.display = 'none';
+                // Style Segmented Controls: DEMO is Selected
+                btnModeDemo.className = "px-3 py-1 transition-all bg-yellow-400 text-black font-bold cursor-pointer";
+                btnModeBle.className = "px-3 py-1 transition-all bg-[#1a1a1a] text-gray-500 hover:text-gray-300 cursor-pointer";
                 
-                isPaused = false;
+                overlay.style.display = 'none';
                 updateRunStateUI();
                 
                 if (!demoInterval) demoInterval = setInterval(generateDemoWave, 33); // ~30 FPS
@@ -424,13 +458,14 @@
                     demoInterval = null;
                 }
                 
+                // Style Segmented Controls: BLE is Selected
+                btnModeDemo.className = "px-3 py-1 transition-all bg-[#1a1a1a] text-gray-500 hover:text-gray-300 cursor-pointer";
+
                 if (bleDevice && bleDevice.gatt.connected) {
-                    btnDemoMode.className = "bg-[#333] text-gray-300 px-2 py-1 flex items-center font-bold rounded-sm cursor-pointer transition hover:bg-gray-700";
-                    btnDemoMode.innerHTML = `BLE <span class="bg-emerald-500 text-white px-1 ml-1 text-[10px] rounded-sm font-bold shadow-sm font-osd">OK</span>`;
+                    btnModeBle.className = "px-3 py-1 transition-all bg-yellow-400 text-black font-bold cursor-pointer";
                     overlay.style.display = 'none';
                 } else {
-                    btnDemoMode.className = "bg-gray-800 text-gray-400 px-2 py-1 flex items-center font-bold rounded-sm cursor-pointer transition hover:bg-gray-700";
-                    btnDemoMode.innerHTML = `BLE <span class="bg-gray-600 text-white px-1 ml-1 text-[10px] rounded-sm shadow-sm font-osd">WAIT</span>`;
+                    btnModeBle.className = "px-3 py-1 transition-all bg-yellow-400 text-black font-bold cursor-pointer";
                     overlay.style.display = 'flex';
                     lastData.fill(0);
                     drawWaveform(lastData);
@@ -438,8 +473,14 @@
             }
         }
 
-        btnDemoMode.addEventListener('click', () => {
-            isDemoMode = !isDemoMode;
+        // Mode segmented buttons click listeners
+        btnModeDemo.addEventListener('click', () => {
+            isDemoMode = true;
+            updateDemoUI();
+        });
+
+        btnModeBle.addEventListener('click', () => {
+            isDemoMode = false;
             updateDemoUI();
         });
 
@@ -490,6 +531,7 @@
             if (isPaused || isDemoMode) return; 
             const data = new Uint8Array(event.target.value.buffer);
             if(data.length === BUFFER_SIZE) {
+                hasReceivedData = true;
                 lastData.set(data);
                 drawWaveform(data);
                 calculateStats(data);
@@ -520,7 +562,8 @@
             let trig8bit = Math.floor((triggerLevelV / 3.3) * 255);
             setTimeout(() => sendCommand("L" + trig8bit), 50);
             setTimeout(() => sendCommand("E" + currentEdge), 100);
-            setTimeout(() => sendCommand("P" + (isPaused ? "1" : "0")), 150);
+            setTimeout(() => sendCommand("M" + triggerMode), 150);
+            setTimeout(() => sendCommand("P" + (isPaused ? "1" : "0")), 200);
         }
 
         // --- Custom Value Modal / Inline Editing Logic ---
@@ -592,12 +635,16 @@
 
             const applyDragVisuals = (newVal) => {
                 btn.textContent = formatValueForBtn(btnId, newVal);
-                btn.classList.add('text-[#fbbf24]', 'font-osd', 'bg-[#292211]');
+                btn.classList.add('font-osd');
+                // Lock the background to the hover color so it doesn't change when mouse leaves
+                btn.classList.replace('bg-[#222]', 'bg-[#333]');
             };
 
             const clearDragVisuals = () => {
                 btn.textContent = originalText;
-                btn.classList.remove('text-[#fbbf24]', 'font-osd', 'bg-[#292211]');
+                btn.classList.remove('font-osd');
+                // Restore original background
+                btn.classList.replace('bg-[#333]', 'bg-[#222]');
             };
 
             // PC Mouse Dragging Mechanics
@@ -830,14 +877,18 @@
         function updateRunStateUI() {
             if (isPaused) {
                 btnRunStop.textContent = "RUN";
-                btnRunStop.classList.remove("border-active-green");
+                btnRunStop.classList.remove("bg-yellow-400", "text-black", "border-yellow-500", "hover:bg-yellow-500");
+                btnRunStop.classList.add("bg-[#1a1a1a]", "text-gray-400", "border-gray-700", "hover:bg-[#222]", "hover:text-white");
                 txtRunState.textContent = "STOPPED";
-                txtRunState.className = "text-red-500";
+                txtRunState.className = "text-gray-500 font-bold";
             } else {
                 btnRunStop.textContent = "STOP";
-                btnRunStop.classList.add("border-active-green");
-                txtRunState.textContent = "RUNNING - AUTO TRIG";
-                txtRunState.className = "text-gray-300";
+                btnRunStop.classList.remove("bg-[#1a1a1a]", "text-gray-400", "border-gray-700", "hover:bg-[#222]", "hover:text-white");
+                btnRunStop.classList.add("bg-yellow-400", "text-black", "border-yellow-500", "hover:bg-yellow-500");
+                
+                let modeStr = triggerMode === 0 ? "FREE RUN" : (triggerMode === 1 ? "AUTO TRIG" : "NORM TRIG");
+                txtRunState.textContent = "RUNNING - " + modeStr;
+                txtRunState.className = "text-gray-300 font-bold";
             }
         }
 
@@ -846,6 +897,30 @@
             updateRunStateUI();
             sendCommand("P" + (isPaused ? "1" : "0"));
         });
+
+        // Trigger Modes Setup
+        function setSegmentedActive(btn, isActive) {
+            if (isActive) {
+                btn.classList.remove('bg-[#1a1a1a]', 'text-gray-500', 'hover:bg-[#222]');
+                btn.classList.add('bg-yellow-400', 'text-black');
+            } else {
+                btn.classList.remove('bg-yellow-400', 'text-black');
+                btn.classList.add('bg-[#1a1a1a]', 'text-gray-500', 'hover:bg-[#222]');
+            }
+        }
+
+        function setTriggerMode(mode) {
+            triggerMode = mode;
+            setSegmentedActive(btnTrigNone, mode === 0);
+            setSegmentedActive(btnTrigAuto, mode === 1);
+            setSegmentedActive(btnTrigNorm, mode === 2);
+            updateRunStateUI();
+            sendCommand("M" + mode);
+        }
+
+        btnTrigNone.addEventListener('click', () => setTriggerMode(0));
+        btnTrigAuto.addEventListener('click', () => setTriggerMode(1));
+        btnTrigNorm.addEventListener('click', () => setTriggerMode(2));
 
         document.getElementById('btn-time-minus').addEventListener('click', () => {
             let next = timeSettings.find(t => t > timebaseUs + 0.1);
@@ -983,14 +1058,14 @@
         const btnEdgeFall = document.getElementById('btn-edge-fall');
         btnEdgeRise.addEventListener('click', () => {
             currentEdge = 1;
-            btnEdgeRise.classList.add("border-active-green");
-            btnEdgeFall.classList.remove("border-active-green");
+            setSegmentedActive(btnEdgeRise, true);
+            setSegmentedActive(btnEdgeFall, false);
             sendCommand("E1");
         });
         btnEdgeFall.addEventListener('click', () => {
             currentEdge = 0;
-            btnEdgeFall.classList.add("border-active-green");
-            btnEdgeRise.classList.remove("border-active-green");
+            setSegmentedActive(btnEdgeFall, true);
+            setSegmentedActive(btnEdgeRise, false);
             sendCommand("E0");
         });
 
@@ -1046,7 +1121,7 @@
         }
 
         function drawWaveform(data) {
-            if (!data || data.length === 0) {
+            if (!hasReceivedData || !data || data.length === 0) {
                 drawGraticule();
                 return;
             }
