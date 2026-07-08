@@ -6,12 +6,12 @@
     <title>Web Oscilloscope - Scoppy Style</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Share+Tech+Mono&display=swap');
         
         body {
             background-color: #000000;
             color: #d1d5db;
-            font-family: 'Roboto', sans-serif;
+            font-family: 'Chakra Petch', sans-serif;
             overflow: hidden;
             user-select: none;
             -webkit-user-select: none;
@@ -19,8 +19,9 @@
             overscroll-behavior: none;
         }
 
+        /* Digital readout font-vibe */
         .font-osd {
-            font-family: 'Roboto Mono', monospace;
+            font-family: 'Share Tech Mono', monospace;
         }
 
         ::-webkit-scrollbar { width: 8px; }
@@ -43,13 +44,18 @@
         }
         .btn-ui:hover { background-color: #4b5563; }
         .btn-ui:active { background-color: #1f2937; }
+
+        /* Draggable parameters cursor style */
+        .btn-draggable {
+            cursor: ew-resize !important;
+        }
         
         /* Active States */
         .tab-active { color: #fbbf24; }
         .border-active-green { border-bottom: 3px solid #10b981; }
         .border-active-purple { border-bottom: 3px solid #8b5cf6; }
 
-        /* Custom Slider Thumb styling to match Scoppy */
+        /* Custom Slider Thumb styling to match Scoppy hardware dial looks */
         #offsetSlider::-webkit-slider-thumb {
             appearance: none;
             width: 14px;
@@ -67,14 +73,54 @@
             border: none;
         }
 
+        #scopeCanvas {
+            cursor: move;
+            touch-action: none; /* Prevents mobile scrolling while dragging the wave */
+        }
+
         canvas {
             display: block;
             width: 100%;
             height: 100%;
         }
+
+        /* Number input hides arrows */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+            font-family: 'Share Tech Mono', monospace;
+        }
+
+        /* Custom Transparent Selection colors matching the user-requested yellow style */
+        input::selection {
+            background: rgba(59, 130, 246, 0.4) !important;
+            color: #fbbf24 !important;
+        }
+        input::-moz-selection {
+            background: rgba(59, 130, 246, 0.4) !important;
+            color: #fbbf24 !important;
+        }
     </style>
 </head>
 <body class="w-screen flex flex-col landscape:flex-row">
+
+    <!-- Value Input Modal (Used on Mobile Only) -->
+    <div id="valueModal" class="absolute inset-0 bg-black/60 items-center justify-center z-[100] hidden">
+        <div class="bg-[#2a2a2a] rounded-sm shadow-2xl max-w-[320px] w-full mx-4 border border-gray-700">
+            <div class="p-6">
+                <h2 id="modalTitle" class="text-white text-lg font-medium mb-8">Value</h2>
+                <input type="number" id="modalInput" step="any" class="w-full bg-transparent border-b-2 border-gray-400 focus:border-[#fbbf24] text-[#fbbf24] outline-none pb-1 text-xl font-osd" value="0">
+            </div>
+            <div class="flex justify-end gap-6 p-5 pt-0">
+                <button id="modalCancel" class="text-[#fbbf24] font-bold text-sm tracking-wide uppercase hover:text-amber-400 transition">Cancel</button>
+                <button id="modalOk" class="text-[#fbbf24] font-bold text-sm tracking-wide uppercase hover:text-amber-400 transition">OK</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Main Oscilloscope Area -->
     <main class="flex-1 flex flex-col relative h-[60dvh] landscape:h-full min-w-0">
@@ -89,9 +135,13 @@
                 <!-- Functional Range Slider -->
                 <input type="range" id="offsetSlider" min="-5" max="5" step="0.1" value="0" class="w-24 h-1 bg-gray-600 appearance-none outline-none hidden sm:block">
                 <span id="top-timediv">500us/div</span>
-                <span id="top-trigoffset" class="hidden sm:inline">+0.0 divs</span>
-                <button id="btn-fullscreen" class="text-gray-500 hover:text-white ml-1 p-1 rounded hover:bg-gray-800" title="Toggle Fullscreen">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
+                <!-- Interactive clickable divs offset readout -->
+                <span id="top-trigoffset" class="hidden sm:inline select-none">0.0 divs</span>
+                <!-- Clean interactive fullscreen button -->
+                <button id="btn-fullscreen" class="text-gray-400 hover:text-white ml-1 p-1 rounded hover:bg-gray-800 transition-colors" title="Toggle Fullscreen">
+                    <svg id="svg-fullscreen" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 3h6m0 0v6m0-6L14 10M9 21H3m0 0v-6m0 6l7-7M3 9V3m0 0h6M3 3l7 7m14 11v-6m0 6h-6m6 0l-7-7" />
+                    </svg>
                 </button>
             </div>
         </div>
@@ -101,8 +151,7 @@
             <canvas id="scopeCanvas"></canvas>
             
             <!-- Trigger Status Text (Top Right) -->
-            <div class="absolute top-2 right-4 text-right font-osd text-xs">
-                <div class="text-red-500 font-bold mb-1">▲T</div>
+            <div class="absolute top-2 right-4 text-right font-osd text-xs pointer-events-none">
                 <div id="osd-runstate" class="text-gray-300">STOPPED</div>
             </div>
 
@@ -115,8 +164,8 @@
                 <div class="text-gray-300">Freq: <span id="osd-freq">-- Hz</span></div>
             </div>
 
-            <!-- Connect Overlay -->
-            <div id="connectOverlay" class="absolute inset-0 bg-black/60 flex items-center justify-center z-50">
+            <!-- Connect Overlay (Hidden by default for Demo Mode) -->
+            <div id="connectOverlay" class="absolute inset-0 bg-black/60 flex items-center justify-center z-50" style="display: none;">
                 <div class="bg-[#1e1e1e] border border-gray-700 p-6 rounded shadow-2xl text-center max-w-sm mx-4">
                     <h2 class="text-white text-lg font-bold mb-2">Device Disconnected</h2>
                     <p class="text-gray-400 text-sm mb-6">Click below to pair with your ESP32 via Web Bluetooth.</p>
@@ -130,7 +179,10 @@
 
         <!-- Bottom Bar -->
         <div class="h-10 bg-[#111111] border-t border-gray-800 flex items-center px-2 gap-2 font-osd text-xs overflow-x-auto whitespace-nowrap">
-            <div class="bg-gray-200 text-black px-2 py-1 flex items-center font-bold rounded-sm">Demo <span class="bg-white px-1 ml-1 text-black text-[10px] rounded-sm">OK</span></div>
+            <!-- Interactive Demo/BT Mode Toggle -->
+            <button id="btn-demo-mode" class="bg-yellow-400 text-black px-2 py-1 flex items-center font-bold rounded-sm cursor-pointer transition hover:bg-yellow-300">
+                Demo <span class="bg-white px-1 ml-1 text-black text-[10px] rounded-sm shadow-sm font-osd">ON</span>
+            </button>
             <div class="bg-yellow-400 text-black px-2 py-1 font-bold flex items-center gap-2 rounded-sm">CH1 <span id="btm-voltsdiv" class="font-normal text-gray-800">1.00V/div</span></div>
             <div class="bg-[#333] text-gray-400 px-2 py-1 rounded-sm">CH2 <span class="text-gray-500 ml-2">OFF</span></div>
             <div class="bg-gray-200 text-black px-2 py-1 flex items-center gap-2 font-bold rounded-sm">TRIG <span id="btm-triglevel" class="font-normal text-gray-800">1.65V</span></div>
@@ -153,12 +205,12 @@
                 <h3 class="text-gray-400 text-xs mb-3">Horizontal</h3>
                 <div class="grid grid-cols-[1fr_2fr_1fr] gap-2 mb-2">
                     <button class="btn-ui text-lg" id="btn-time-minus">-</button>
-                    <div class="btn-ui bg-[#2a2a2a] pointer-events-none">TIME/DIV</div>
+                    <button class="btn-ui bg-[#2a2a2a] hover:bg-[#333] transition" id="btn-time-val">TIME/DIV</button>
                     <button class="btn-ui text-lg" id="btn-time-plus">+</button>
                 </div>
                 <div class="grid grid-cols-[1fr_2fr_1fr] gap-2">
                     <button class="btn-ui text-lg" id="btn-hpos-minus">-</button>
-                    <div class="btn-ui bg-[#2a2a2a] pointer-events-none">POSITION</div>
+                    <button class="btn-ui bg-[#2a2a2a] hover:bg-[#333] transition" id="btn-hpos-val">POSITION</button>
                     <button class="btn-ui text-lg" id="btn-hpos-plus">+</button>
                 </div>
             </section>
@@ -176,12 +228,12 @@
                 </div>
                 <div class="grid grid-cols-[1fr_2fr_1fr] gap-2 mb-2">
                     <button class="btn-ui text-lg" id="btn-volt-minus">-</button>
-                    <div class="btn-ui bg-[#2a2a2a] pointer-events-none">VOLTS/DIV</div>
+                    <button class="btn-ui bg-[#2a2a2a] hover:bg-[#333] transition" id="btn-volt-val">VOLTS/DIV</button>
                     <button class="btn-ui text-lg" id="btn-volt-plus">+</button>
                 </div>
                 <div class="grid grid-cols-[1fr_2fr_1fr] gap-2">
                     <button class="btn-ui text-lg" id="btn-vpos-minus">-</button>
-                    <div class="btn-ui bg-[#2a2a2a] pointer-events-none">POSITION</div>
+                    <button class="btn-ui bg-[#2a2a2a] hover:bg-[#333] transition" id="btn-vpos-val">POSITION</button>
                     <button class="btn-ui text-lg" id="btn-vpos-plus">+</button>
                 </div>
             </section>
@@ -206,7 +258,7 @@
 
                 <div class="grid grid-cols-[1fr_2fr_1fr] gap-2 mb-3">
                     <button class="btn-ui text-lg" id="btn-trigl-minus">-</button>
-                    <div class="btn-ui bg-[#2a2a2a] pointer-events-none">LEVEL</div>
+                    <button class="btn-ui bg-[#2a2a2a] hover:bg-[#333] transition" id="btn-trigl-val">LEVEL</button>
                     <button class="btn-ui text-lg" id="btn-trigl-plus">+</button>
                 </div>
 
@@ -224,28 +276,27 @@
         const RX_UUID = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
         const TX_UUID = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
         let rxCharacteristic = null, txCharacteristic = null, bleDevice = null;
-        const BUFFER_SIZE = 400; // Matches ESP32 BLE code
+        const BUFFER_SIZE = 400;
 
         // --- Scope State & UI Settings ---
-        let isPaused = true; 
+        let isPaused = false; 
+        let isDemoMode = true; // Default to Demo Mode
+        let demoInterval = null;
+        let demoPhaseDrift = 0;
         
-        // Timebase arrays (Microseconds per sample delay sent to ESP32)
-        const timeSettings = [10, 25, 50, 100, 250, 500, 1000, 2500];
-        const timeLabels = ["100us/div", "250us/div", "500us/div", "1ms/div", "2.5ms/div", "5ms/div", "10ms/div", "25ms/div"];
-        let timeIdx = 2; // Default 50us (500us/div)
-
-        // Vertical Scale (Handled purely in frontend rendering)
-        const voltSettings = [0.1, 0.2, 0.5, 1.0, 2.0];
-        let voltIdx = 3; // Default 1.0V / div
+        // Scope core values
+        let timebaseUs = 50; 
+        let voltsPerDiv = 1.0; 
         let verticalOffset = 0; // divisions
-
-        // Horizontal Panning
         let horizontalOffsetDivs = 0; // divisions
-        let lastData = new Uint8Array(BUFFER_SIZE); // Cache for redrawing while paused/panning
-
-        // Trigger settings
         let triggerLevelV = 1.65; // Volts
         let currentEdge = 1; // 1 = Rising, 0 = Falling
+
+        // Arrays for standard stepping controls
+        const timeSettings = [10, 25, 50, 100, 250, 500, 1000, 2500, 5000];
+        const voltSettings = [0.1, 0.2, 0.5, 1.0, 2.0, 5.0];
+
+        let lastData = new Uint8Array(BUFFER_SIZE); 
 
         // Grid Constants
         const hDivs = 12; // 12 horizontal divisions
@@ -254,6 +305,9 @@
         // FPS tracking
         let frameCount = 0;
         let lastFpsTime = performance.now();
+
+        // Check if device is mobile/touch enabled
+        const isMobileDevice = window.matchMedia("(any-pointer: coarse)").matches || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
         // --- DOM Elements ---
         const canvas = document.getElementById('scopeCanvas');
@@ -268,9 +322,28 @@
         const txtRunState = document.getElementById('osd-runstate');
         const txtSampleRate = document.getElementById('top-samplerate');
         const btnRunStop = document.getElementById('btn-runstop');
+        const btnDemoMode = document.getElementById('btn-demo-mode');
+        const btnFullscreen = document.getElementById('btn-fullscreen');
+        const svgFullscreen = document.getElementById('svg-fullscreen');
+        const txtTrigOffset = document.getElementById('top-trigoffset');
 
-        // Fullscreen Toggle
-        document.getElementById('btn-fullscreen').addEventListener('click', () => {
+        // Responsive clean SVG paths for fullscreen
+        const pathExpand = "M15 3h6m0 0v6m0-6L14 10M9 21H3m0 0v-6m0 6l7-7M3 9V3m0 0h6M3 3l7 7m14 11v-6m0 6h-6m6 0l-7-7";
+        const pathShrink = "M4 14h6m0 0v6m0-6l-7 7M20 10h-6m0 0V4m0 6l7-7M4 10h6m0 0V4m0 6L3 3m17 11h-6m0 0v6m0-6l7 7";
+
+        document.addEventListener('fullscreenchange', () => {
+            const path = svgFullscreen.querySelector('path');
+            if (document.fullscreenElement) {
+                path.setAttribute('d', pathShrink);
+                btnFullscreen.title = "Exit Fullscreen";
+            } else {
+                path.setAttribute('d', pathExpand);
+                btnFullscreen.title = "Toggle Fullscreen";
+            }
+        });
+
+        // Fullscreen Toggle Event
+        btnFullscreen.addEventListener('click', () => {
             if (!document.fullscreenElement) {
                 document.documentElement.requestFullscreen().catch(e => console.log(e));
             } else {
@@ -287,6 +360,88 @@
         }
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
+
+        // --- Demo Mode Logic ---
+        function generateDemoWave() {
+            if (!isDemoMode || isPaused) return;
+            const data = new Uint8Array(BUFFER_SIZE);
+            
+            // Calculate cycles to simulate a perfect 1kHz sine wave
+            let delayUs = timebaseUs + 9;
+            let totalCaptureTimeUs = BUFFER_SIZE * delayUs;
+            let wavePeriodUs = 1000; // 1 kHz
+            
+            let cycles = Math.round(totalCaptureTimeUs / wavePeriodUs);
+            if (cycles < 1) cycles = 1;
+            
+            let phaseInc = (Math.PI * 2 * cycles) / BUFFER_SIZE;
+
+            // Trigger simulation
+            let trig8bit = Math.floor((triggerLevelV / 3.3) * 255);
+            let trigOffset = (trig8bit - 127) / 80; 
+            
+            let startPhase = 0;
+            if (trigOffset >= -1 && trigOffset <= 1) {
+                startPhase = Math.asin(trigOffset);
+                if (currentEdge === 0) startPhase = Math.PI - startPhase; // Falling edge
+            } else {
+                demoPhaseDrift += 0.15;
+                startPhase = demoPhaseDrift;
+            }
+
+            for(let i = 0; i < BUFFER_SIZE; i++) {
+                let val = 127 + Math.sin(startPhase + i * phaseInc) * 80;
+                val += (Math.random() * 3 - 1.5); // Tiny electrical noise
+                data[i] = val;
+            }
+            
+            lastData.set(data);
+            drawWaveform(data);
+            calculateStats(data);
+            
+            frameCount++;
+            let now = performance.now();
+            if (now - lastFpsTime >= 1000) {
+                document.getElementById('stat-fps').textContent = `FPS: ${frameCount}`;
+                frameCount = 0;
+                lastFpsTime = now;
+            }
+        }
+
+        function updateDemoUI() {
+            if (isDemoMode) {
+                btnDemoMode.className = "bg-yellow-400 text-black px-2 py-1 flex items-center font-bold rounded-sm cursor-pointer transition hover:bg-yellow-300";
+                btnDemoMode.innerHTML = `Demo <span class="bg-white px-1 ml-1 text-black text-[10px] rounded-sm shadow-sm font-osd">ON</span>`;
+                overlay.style.display = 'none';
+                
+                isPaused = false;
+                updateRunStateUI();
+                
+                if (!demoInterval) demoInterval = setInterval(generateDemoWave, 33); // ~30 FPS
+            } else {
+                if (demoInterval) {
+                    clearInterval(demoInterval);
+                    demoInterval = null;
+                }
+                
+                if (bleDevice && bleDevice.gatt.connected) {
+                    btnDemoMode.className = "bg-[#333] text-gray-300 px-2 py-1 flex items-center font-bold rounded-sm cursor-pointer transition hover:bg-gray-700";
+                    btnDemoMode.innerHTML = `BLE <span class="bg-emerald-500 text-white px-1 ml-1 text-[10px] rounded-sm font-bold shadow-sm font-osd">OK</span>`;
+                    overlay.style.display = 'none';
+                } else {
+                    btnDemoMode.className = "bg-gray-800 text-gray-400 px-2 py-1 flex items-center font-bold rounded-sm cursor-pointer transition hover:bg-gray-700";
+                    btnDemoMode.innerHTML = `BLE <span class="bg-gray-600 text-white px-1 ml-1 text-[10px] rounded-sm shadow-sm font-osd">WAIT</span>`;
+                    overlay.style.display = 'flex';
+                    lastData.fill(0);
+                    drawWaveform(lastData);
+                }
+            }
+        }
+
+        btnDemoMode.addEventListener('click', () => {
+            isDemoMode = !isDemoMode;
+            updateDemoUI();
+        });
 
         // --- Bluetooth Logic ---
         document.getElementById('connectBtn').addEventListener('click', async () => {
@@ -312,10 +467,9 @@
                 await txCharacteristic.startNotifications();
                 txCharacteristic.addEventListener('characteristicvaluechanged', handleNotifications);
 
-                // Success
-                overlay.style.display = 'none';
+                isDemoMode = false;
                 isPaused = false;
-                updateRunStateUI();
+                updateDemoUI();
                 sendAllConfigToESP32();
                 
             } catch (error) {
@@ -324,18 +478,19 @@
             }
         });
 
+        // Disconnect
         function onDisconnect() {
-            overlay.style.display = 'flex';
             connStatus.textContent = "Connection lost. Please reconnect.";
             isPaused = true;
             updateRunStateUI();
+            updateDemoUI(); 
         }
 
         function handleNotifications(event) {
-            if (isPaused) return;
+            if (isPaused || isDemoMode) return; 
             const data = new Uint8Array(event.target.value.buffer);
             if(data.length === BUFFER_SIZE) {
-                lastData.set(data); // Save to cache for live panning
+                lastData.set(data);
                 drawWaveform(data);
                 calculateStats(data);
             }
@@ -350,36 +505,324 @@
         }
 
         async function sendCommand(cmd) {
-            if (rxCharacteristic) {
+            if (rxCharacteristic && !isDemoMode) {
                 try {
                     let encoder = new TextEncoder();
                     await rxCharacteristic.writeValueWithoutResponse(encoder.encode(cmd))
-                        .catch(() => rxCharacteristic.writeValue(encoder.encode(cmd))); // Fallback for older browsers
+                        .catch(() => rxCharacteristic.writeValue(encoder.encode(cmd))); 
                 } catch(e) { console.error("Write error:", e); }
             }
         }
 
         function sendAllConfigToESP32() {
-            sendCommand("T" + timeSettings[timeIdx]);
-            // Convert voltage (0-3.3) to 8-bit (0-255) for ESP32
+            if(isDemoMode) return;
+            sendCommand("T" + Math.round(timebaseUs));
             let trig8bit = Math.floor((triggerLevelV / 3.3) * 255);
             setTimeout(() => sendCommand("L" + trig8bit), 50);
             setTimeout(() => sendCommand("E" + currentEdge), 100);
             setTimeout(() => sendCommand("P" + (isPaused ? "1" : "0")), 150);
         }
 
+        // --- Custom Value Modal / Inline Editing Logic ---
+        const valueModal = document.getElementById('valueModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalInput = document.getElementById('modalInput');
+        const modalCancel = document.getElementById('modalCancel');
+        const modalOk = document.getElementById('modalOk');
+        let modalSubmitCallback = null;
+
+        function openValueModal(title, currentValue, callback) {
+            modalTitle.textContent = title;
+            modalInput.value = currentValue;
+            modalSubmitCallback = callback;
+            valueModal.style.display = 'flex';
+            modalInput.focus();
+            modalInput.select();
+        }
+
+        function closeValueModal() {
+            valueModal.style.display = 'none';
+            modalSubmitCallback = null;
+        }
+
+        modalCancel.addEventListener('click', closeValueModal);
+        modalOk.addEventListener('click', () => {
+            if (modalSubmitCallback) {
+                const val = parseFloat(modalInput.value);
+                if (!isNaN(val)) modalSubmitCallback(val);
+            }
+            closeValueModal();
+        });
+        
+        modalInput.addEventListener('keyup', (e) => {
+            if (e.key === 'Enter') modalOk.click();
+            if (e.key === 'Escape') modalCancel.click();
+        });
+
+        // Formatter Helper to display clean readable numbers on the button itself while dragging
+        function formatValueForBtn(btnId, val) {
+            if (btnId === 'btn-time-val') {
+                if (val >= 1000) {
+                    return (val / 1000).toFixed(1).replace('.0', '') + "ms";
+                } else {
+                    return Math.round(val) + "us";
+                }
+            }
+            if (btnId === 'btn-hpos-val' || btnId === 'btn-vpos-val') {
+                return (val >= 0 ? '+' : '') + val.toFixed(1) + " div";
+            }
+            if (btnId === 'btn-volt-val') {
+                return val.toFixed(2) + "V";
+            }
+            if (btnId === 'btn-trigl-val') {
+                return val.toFixed(2) + "V";
+            }
+            return val.toFixed(2);
+        }
+
+        // Smart Input Binder (Combines Horizontal Dragging + Live Value Display + Typing Interaction)
+        function bindSmartInput(btnId, title, getVal, callback, dragConfig = { type: 'linear', step: 0.05 }) {
+            const btn = document.getElementById(btnId);
+            btn.classList.add('btn-draggable');
+            const originalText = btn.textContent;
+
+            let startX = 0;
+            let startVal = 0;
+            let hasDragged = false;
+
+            const applyDragVisuals = (newVal) => {
+                btn.textContent = formatValueForBtn(btnId, newVal);
+                btn.classList.add('text-[#fbbf24]', 'font-osd', 'bg-[#292211]');
+            };
+
+            const clearDragVisuals = () => {
+                btn.textContent = originalText;
+                btn.classList.remove('text-[#fbbf24]', 'font-osd', 'bg-[#292211]');
+            };
+
+            // PC Mouse Dragging Mechanics
+            const onMouseDown = (e) => {
+                if (e.button !== 0) return; // Only left clicks
+                if (btn.querySelector('input')) return; // Ignore if typing
+
+                startX = e.clientX;
+                startVal = getVal();
+                hasDragged = false;
+
+                document.body.style.cursor = 'ew-resize';
+                document.body.style.userSelect = 'none';
+
+                const onMouseMove = (moveEvent) => {
+                    const deltaX = moveEvent.clientX - startX;
+                    if (!hasDragged && Math.abs(deltaX) > 4) {
+                        hasDragged = true;
+                    }
+
+                    if (hasDragged) {
+                        let newVal = startVal;
+                        if (dragConfig.type === 'proportional') {
+                            newVal = startVal * Math.pow(1.006, deltaX);
+                        } else {
+                            newVal = startVal + deltaX * dragConfig.step;
+                        }
+
+                        if (dragConfig.min !== undefined) newVal = Math.max(dragConfig.min, newVal);
+                        if (dragConfig.max !== undefined) newVal = Math.min(dragConfig.max, newVal);
+
+                        callback(newVal);
+                        applyDragVisuals(newVal);
+                    }
+                };
+
+                const onMouseUp = () => {
+                    window.removeEventListener('mousemove', onMouseMove);
+                    window.removeEventListener('mouseup', onMouseUp);
+                    document.body.style.cursor = '';
+                    document.body.style.userSelect = '';
+
+                    if (hasDragged) {
+                        clearDragVisuals();
+                    } else {
+                        triggerClickAction();
+                    }
+                };
+
+                window.addEventListener('mousemove', onMouseMove);
+                window.addEventListener('mouseup', onMouseUp);
+            };
+
+            // Touch Screen Swiping Mechanics
+            const onTouchStart = (e) => {
+                if (btn.querySelector('input')) return;
+                if (e.touches.length !== 1) return;
+
+                startX = e.touches[0].clientX;
+                startVal = getVal();
+                hasDragged = false;
+
+                const onTouchMove = (moveEvent) => {
+                    if (moveEvent.touches.length !== 1) return;
+                    const deltaX = moveEvent.touches[0].clientX - startX;
+                    if (!hasDragged && Math.abs(deltaX) > 6) {
+                        hasDragged = true;
+                    }
+
+                    if (hasDragged) {
+                        moveEvent.preventDefault(); // Prevent body scroll bounce
+                        let newVal = startVal;
+                        if (dragConfig.type === 'proportional') {
+                            newVal = startVal * Math.pow(1.008, deltaX);
+                        } else {
+                            newVal = startVal + deltaX * dragConfig.step;
+                        }
+
+                        if (dragConfig.min !== undefined) newVal = Math.max(dragConfig.min, newVal);
+                        if (dragConfig.max !== undefined) newVal = Math.min(dragConfig.max, newVal);
+
+                        callback(newVal);
+                        applyDragVisuals(newVal);
+                    }
+                };
+
+                const onTouchEnd = () => {
+                    window.removeEventListener('touchmove', onTouchMove);
+                    window.removeEventListener('touchend', onTouchEnd);
+
+                    if (hasDragged) {
+                        clearDragVisuals();
+                    } else {
+                        triggerClickAction();
+                    }
+                };
+
+                window.addEventListener('touchmove', onTouchMove, { passive: false });
+                window.addEventListener('touchend', onTouchEnd);
+            };
+
+            // Keyboard/typing direct numerical edits
+            const triggerClickAction = () => {
+                if (isMobileDevice) {
+                    openValueModal(title, getVal(), callback);
+                } else {
+                    if (btn.querySelector('input')) return; 
+
+                    const inlineInput = document.createElement('input');
+                    inlineInput.type = 'number';
+                    inlineInput.step = 'any';
+                    inlineInput.value = getVal().toFixed(2).replace(/\.00$/, '');
+                    inlineInput.className = 'w-full h-full bg-[#111111] text-center text-[#fbbf24] outline-none font-osd rounded-sm px-1';
+                    
+                    btn.textContent = '';
+                    btn.appendChild(inlineInput);
+                    inlineInput.focus();
+                    inlineInput.select();
+
+                    let isDone = false;
+                    const finishEdit = (saveVal) => {
+                        if (isDone) return;
+                        isDone = true;
+                        const val = parseFloat(inlineInput.value);
+                        btn.textContent = originalText;
+                        if (saveVal && !isNaN(val)) callback(val);
+                    };
+
+                    inlineInput.addEventListener('blur', () => finishEdit(true));
+                    inlineInput.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter') finishEdit(true);
+                        if (e.key === 'Escape') finishEdit(false);
+                    });
+                }
+            };
+
+            btn.addEventListener('mousedown', onMouseDown);
+            btn.addEventListener('touchstart', onTouchStart, { passive: true });
+        }
+
+        // Bind middle control buttons to Drag/Smart-input mechanics
+        bindSmartInput('btn-time-val', 'Time/div (µs)', () => timebaseUs, (newVal) => {
+            timebaseUs = Math.max(1, newVal); 
+            updateLabels();
+            sendCommand("T" + Math.round(timebaseUs));
+        }, { type: 'proportional', min: 1, max: 100000 });
+
+        bindSmartInput('btn-hpos-val', 'Horizontal Position (divs)', () => horizontalOffsetDivs, (newVal) => {
+            horizontalOffsetDivs = Math.max(-10, Math.min(10, newVal));
+            updateHorizontalOffsetUI();
+        }, { type: 'linear', step: 0.04, min: -10, max: 10 });
+
+        bindSmartInput('btn-volt-val', 'CH1 Volts/div', () => voltsPerDiv, (newVal) => {
+            voltsPerDiv = Math.max(0.01, newVal);
+            updateLabels();
+        }, { type: 'proportional', min: 0.01, max: 50 });
+
+        bindSmartInput('btn-vpos-val', 'Vertical Position (divs)', () => verticalOffset, (newVal) => {
+            verticalOffset = newVal;
+            drawWaveform(lastData);
+        }, { type: 'linear', step: 0.04, min: -15, max: 15 });
+
+        bindSmartInput('btn-trigl-val', 'Trigger Level (V)', () => triggerLevelV, (newVal) => {
+            triggerLevelV = Math.max(0, Math.min(3.3, newVal));
+            let trig8bit = Math.floor((triggerLevelV / 3.3) * 255);
+            sendCommand("L" + trig8bit);
+            updateLabels();
+        }, { type: 'linear', step: 0.012, min: 0, max: 3.3 });
+
+        // --- Interactive Trigger Offset Readout Click ---
+        txtTrigOffset.classList.add('cursor-pointer', 'hover:text-[#fbbf24]', 'transition-colors');
+        txtTrigOffset.addEventListener('click', () => {
+            if (isMobileDevice) {
+                openValueModal('Horizontal Offset (divs)', horizontalOffsetDivs, (newVal) => {
+                    horizontalOffsetDivs = Math.max(-10, Math.min(10, newVal));
+                    updateHorizontalOffsetUI();
+                });
+            } else {
+                if (txtTrigOffset.querySelector('input')) return; // Already editing
+
+                const inlineInput = document.createElement('input');
+                inlineInput.type = 'number';
+                inlineInput.step = 'any';
+                inlineInput.value = horizontalOffsetDivs.toFixed(1);
+                inlineInput.className = 'bg-[#111111] text-[#fbbf24] outline-none font-osd text-center rounded-sm w-14 h-5 border border-gray-700 text-xs inline-block align-middle';
+
+                txtTrigOffset.textContent = '';
+                txtTrigOffset.appendChild(inlineInput);
+                inlineInput.focus();
+                inlineInput.select();
+
+                let isDone = false;
+                const finishEdit = (saveVal) => {
+                    if (isDone) return;
+                    isDone = true;
+                    const val = parseFloat(inlineInput.value);
+                    if (saveVal && !isNaN(val)) {
+                        horizontalOffsetDivs = Math.max(-10, Math.min(10, val));
+                    }
+                    updateHorizontalOffsetUI();
+                };
+
+                inlineInput.addEventListener('blur', () => finishEdit(true));
+                inlineInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') finishEdit(true);
+                    if (e.key === 'Escape') finishEdit(false);
+                });
+            }
+        });
+
         // --- UI Interactions ---
         function updateLabels() {
-            txtTimeDiv.textContent = timeLabels[timeIdx];
-            txtVoltsDiv.textContent = voltSettings[voltIdx].toFixed(2) + "V/div";
+            if (timebaseUs >= 1000) {
+                txtTimeDiv.textContent = (timebaseUs / 1000).toFixed(1).replace('.0', '') + "ms/div";
+            } else {
+                txtTimeDiv.textContent = Math.round(timebaseUs) + "us/div";
+            }
+
+            txtVoltsDiv.textContent = voltsPerDiv.toFixed(2) + "V/div";
             txtTrigLevel.textContent = triggerLevelV.toFixed(2) + "V";
             
-            // Calc sample rate approx (ESP32 ADC takes ~9us)
-            let delayUs = timeSettings[timeIdx] + 9; 
+            let delayUs = timebaseUs + 9; 
             let sr = 1000000 / delayUs;
             txtSampleRate.textContent = (sr / 1000).toFixed(1) + " kS/s";
             
-            // Redraw cached waveform immediately to show scale changes
             if (lastData && lastData.length > 0) drawWaveform(lastData);
             else drawGraticule(); 
         }
@@ -404,27 +847,28 @@
             sendCommand("P" + (isPaused ? "1" : "0"));
         });
 
-        // Time Buttons
         document.getElementById('btn-time-minus').addEventListener('click', () => {
-            if(timeIdx > 0) { timeIdx--; updateLabels(); sendCommand("T" + timeSettings[timeIdx]); }
+            let next = timeSettings.find(t => t > timebaseUs + 0.1);
+            if(next) { timebaseUs = next; updateLabels(); sendCommand("T" + Math.round(timebaseUs)); }
         });
         document.getElementById('btn-time-plus').addEventListener('click', () => {
-            if(timeIdx < timeSettings.length - 1) { timeIdx++; updateLabels(); sendCommand("T" + timeSettings[timeIdx]); }
+            let next = [...timeSettings].reverse().find(t => t < timebaseUs - 0.1);
+            if(next) { timebaseUs = next; updateLabels(); sendCommand("T" + Math.round(timebaseUs)); }
         });
 
-        // Volts Buttons (Frontend only)
         document.getElementById('btn-volt-minus').addEventListener('click', () => {
-            if(voltIdx > 0) { voltIdx--; updateLabels(); }
+            let next = voltSettings.find(v => v > voltsPerDiv + 0.001);
+            if(next) { voltsPerDiv = next; updateLabels(); }
         });
         document.getElementById('btn-volt-plus').addEventListener('click', () => {
-            if(voltIdx < voltSettings.length - 1) { voltIdx++; updateLabels(); }
+            let next = [...voltSettings].reverse().find(v => v < voltsPerDiv - 0.001);
+            if(next) { voltsPerDiv = next; updateLabels(); }
         });
 
-        // Horizontal Position Slider & Sync
         const offsetSlider = document.getElementById('offsetSlider');
         function updateHorizontalOffsetUI() {
             let sign = horizontalOffsetDivs >= 0 ? '+' : '';
-            document.getElementById('top-trigoffset').textContent = sign + horizontalOffsetDivs.toFixed(1) + " divs";
+            txtTrigOffset.textContent = sign + horizontalOffsetDivs.toFixed(1) + " divs";
             offsetSlider.value = horizontalOffsetDivs;
             drawWaveform(lastData);
         }
@@ -434,7 +878,6 @@
             updateHorizontalOffsetUI();
         });
 
-        // Horizontal Position Buttons
         document.getElementById('btn-hpos-minus').addEventListener('click', () => {
             horizontalOffsetDivs = Math.max(-5, horizontalOffsetDivs - 0.1);
             updateHorizontalOffsetUI();
@@ -444,7 +887,6 @@
             updateHorizontalOffsetUI();
         });
 
-        // Vertical Position Buttons (Frontend only)
         document.getElementById('btn-vpos-minus').addEventListener('click', () => {
             verticalOffset -= 0.5; drawWaveform(lastData);
         });
@@ -452,7 +894,78 @@
             verticalOffset += 0.5; drawWaveform(lastData);
         });
 
-        // Trigger Level
+        // --- Canvas Dragging (Waveform Pan) Logic ---
+        let isDragging = false;
+        let lastDragX = 0;
+        let lastDragY = 0;
+        let dragAxis = null; 
+        let startDragX = 0;
+        let startDragY = 0;
+        const DRAG_THRESHOLD = 5; 
+
+        const handleDragStart = (clientX, clientY) => {
+            isDragging = true;
+            startDragX = clientX;
+            startDragY = clientY;
+            lastDragX = clientX;
+            lastDragY = clientY;
+            dragAxis = null;
+            canvas.style.cursor = 'move'; 
+        };
+
+        const handleDragMove = (clientX, clientY) => {
+            if (!isDragging) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const dx_px = rect.width / hDivs;
+            const dy_px = rect.height / vDivs;
+
+            const deltaX = clientX - lastDragX;
+            const deltaY = clientY - lastDragY;
+
+            if (!dragAxis) {
+                const distX = Math.abs(clientX - startDragX);
+                const distY = Math.abs(clientY - startDragY);
+                if (distX > DRAG_THRESHOLD || distY > DRAG_THRESHOLD) {
+                    dragAxis = distX > distY ? 'x' : 'y';
+                    canvas.style.cursor = dragAxis === 'x' ? 'ew-resize' : 'ns-resize';
+                }
+            }
+
+            lastDragX = clientX;
+            lastDragY = clientY;
+
+            if (dragAxis === 'x') {
+                horizontalOffsetDivs += (deltaX / dx_px);
+                horizontalOffsetDivs = Math.max(-5, Math.min(5, horizontalOffsetDivs)); 
+                updateHorizontalOffsetUI(); 
+            } else if (dragAxis === 'y') {
+                verticalOffset -= (deltaY / dy_px);
+                drawWaveform(lastData); 
+            }
+        };
+
+        const handleDragEnd = () => {
+            isDragging = false;
+            dragAxis = null;
+            canvas.style.cursor = 'move'; 
+        };
+
+        canvas.addEventListener('mousedown', (e) => handleDragStart(e.clientX, e.clientY));
+        window.addEventListener('mousemove', (e) => handleDragMove(e.clientX, e.clientY));
+        window.addEventListener('mouseup', handleDragEnd);
+
+        canvas.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) handleDragStart(e.touches[0].clientX, e.touches[0].clientY);
+        }, { passive: false });
+        window.addEventListener('touchmove', (e) => {
+            if (isDragging && e.touches.length === 1) {
+                e.preventDefault(); 
+                handleDragMove(e.touches[0].clientX, e.touches[0].clientY);
+            }
+        }, { passive: false });
+        window.addEventListener('touchend', handleDragEnd);
+
         document.getElementById('btn-trigl-minus').addEventListener('click', () => {
             triggerLevelV = Math.max(0, triggerLevelV - 0.1);
             let trig8bit = Math.floor((triggerLevelV / 3.3) * 255);
@@ -466,7 +979,6 @@
             updateLabels();
         });
 
-        // Trigger Edge Buttons
         const btnEdgeRise = document.getElementById('btn-edge-rise');
         const btnEdgeFall = document.getElementById('btn-edge-fall');
         btnEdgeRise.addEventListener('click', () => {
@@ -492,38 +1004,31 @@
             const dx = w / hDivs;
             const dy = h / vDivs;
 
-            // Draw Grid
             ctx.beginPath();
             ctx.strokeStyle = '#222222';
             ctx.lineWidth = 1;
             
-            // Vertical lines
             for(let i = 1; i < hDivs; i++) {
                 ctx.moveTo(i * dx, 0);
                 ctx.lineTo(i * dx, h);
             }
-            // Horizontal lines
             for(let i = 1; i < vDivs; i++) {
                 ctx.moveTo(0, i * dy);
                 ctx.lineTo(w, i * dy);
             }
             ctx.stroke();
 
-            // Draw Center Axes & Ticks
             ctx.beginPath();
             ctx.strokeStyle = '#444444';
             
-            // Center Horizontal Axis (0V reference if centered)
             let centerY = h / 2;
             ctx.moveTo(0, centerY);
             ctx.lineTo(w, centerY);
             
-            // Center Vertical Axis
             let centerX = w / 2;
             ctx.moveTo(centerX, 0);
             ctx.lineTo(centerX, h);
 
-            // Tick marks on center horizontal
             for(let i = 0; i < hDivs * 5; i++) {
                 let tickX = i * (dx / 5);
                 let tickLen = (i % 5 === 0) ? 6 : 3;
@@ -531,7 +1036,6 @@
                 ctx.lineTo(tickX, centerY + tickLen);
             }
             
-            // Tick marks on center vertical
             for(let i = 0; i < vDivs * 5; i++) {
                 let tickY = i * (dy / 5);
                 let tickLen = (i % 5 === 0) ? 6 : 3;
@@ -539,19 +1043,6 @@
                 ctx.lineTo(centerX + tickLen, tickY);
             }
             ctx.stroke();
-
-            // Draw Trigger Level Marker (Yellow Arrow on right side)
-            let voltsPerDiv = voltSettings[voltIdx];
-            let pixelPerVolt = dy / voltsPerDiv;
-            let zeroVoltY = (h/2) + (1.65 * pixelPerVolt) + (verticalOffset * dy);
-            let trigY = zeroVoltY - (triggerLevelV * pixelPerVolt);
-
-            ctx.fillStyle = '#fbbf24'; // Yellow
-            ctx.beginPath();
-            ctx.moveTo(w, trigY);
-            ctx.lineTo(w - 10, trigY - 5);
-            ctx.lineTo(w - 10, trigY + 5);
-            ctx.fill();
         }
 
         function drawWaveform(data) {
@@ -565,31 +1056,25 @@
             const h = canvas.height;
             const dx = w / hDivs;
             const dy = h / vDivs;
-            let voltsPerDiv = voltSettings[voltIdx];
             let pixelPerVolt = dy / voltsPerDiv;
             
-            // Center is mapped to 1.65V
-            let zeroVoltY = (h/2) + (1.65 * pixelPerVolt) + (verticalOffset * dy);
-            
-            // Calculate Horizontal shift based on slider
+            let zeroVoltY = (h/2) + (1.65 * pixelPerVolt) - (verticalOffset * dy);
             let xOffset = horizontalOffsetDivs * dx;
 
             ctx.beginPath();
-            ctx.strokeStyle = '#fbbf24'; // Scoppy Yellow
+            ctx.strokeStyle = '#fbbf24'; 
             ctx.lineWidth = 1.5;
             ctx.lineJoin = 'round';
 
             const sliceWidth = w / data.length;
             let firstPoint = true;
 
-            // Helper to draw a continuous segment of the 400 points
             const drawSegment = (startX) => {
                 let x = startX;
                 for (let i = 0; i < data.length; i++) {
                     let v = (data[i] / 255.0) * 3.3;
                     let y = zeroVoltY - (v * pixelPerVolt);
 
-                    // Connect edges seamlessly
                     if (firstPoint) {
                         ctx.moveTo(x, y);
                         firstPoint = false;
@@ -600,13 +1085,8 @@
                 }
             };
 
-            // Wrap logic: If panned right, fill the void on the left
             if (xOffset > 0) drawSegment(xOffset - w);
-            
-            // Draw main wave block
             drawSegment(xOffset);
-            
-            // Wrap logic: If panned left, fill the void on the right
             if (xOffset < 0) drawSegment(xOffset + w);
 
             ctx.stroke();
@@ -642,7 +1122,7 @@
 
             if (crossings > 1) {
                 let samplesPerCycle = (lastCrossIdx - firstCrossIdx) / (crossings - 1);
-                let timePerSample = (timeSettings[timeIdx] + 9) / 1000000.0; 
+                let timePerSample = (timebaseUs + 9) / 1000000.0; 
                 let freq = 1.0 / (samplesPerCycle * timePerSample);
                 
                 let freqText = freq > 999 ? (freq/1000).toFixed(2) + ' kHz' : Math.round(freq) + ' Hz';
@@ -652,8 +1132,9 @@
             }
         }
 
-        // Initialize UI labels
+        // Initialize UI
         updateLabels();
+        updateDemoUI(); 
 
     </script>
 </body>
