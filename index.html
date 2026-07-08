@@ -23,19 +23,10 @@
             font-family: 'Roboto Mono', monospace;
         }
 
-        /* Custom Scrollbar for the right panel */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #1e1e1e;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #4b5563;
-            border-radius: 4px;
-        }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1e1e1e; }
+        ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
 
-        /* UI Button Styles */
         .btn-ui {
             background-color: #374151;
             color: #e5e7eb;
@@ -54,15 +45,9 @@
         .btn-ui:active { background-color: #1f2937; }
         
         /* Active States */
-        .tab-active {
-            color: #fbbf24; /* Yellow text for active channel */
-        }
-        .border-active-green {
-            border-bottom: 3px solid #10b981;
-        }
-        .border-active-purple {
-            border-bottom: 3px solid #8b5cf6;
-        }
+        .tab-active { color: #fbbf24; }
+        .border-active-green { border-bottom: 3px solid #10b981; }
+        .border-active-purple { border-bottom: 3px solid #8b5cf6; }
 
         canvas {
             display: block;
@@ -89,7 +74,7 @@
                 <span id="top-timediv">500us/div</span>
                 <span id="top-trigoffset" class="hidden sm:inline">+0.0 divs</span>
                 <button id="btn-fullscreen" class="text-gray-500 hover:text-white ml-1 p-1 rounded hover:bg-gray-800" title="Toggle Fullscreen">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
                 </button>
             </div>
         </div>
@@ -115,10 +100,10 @@
 
             <!-- Connect Overlay -->
             <div id="connectOverlay" class="absolute inset-0 bg-black/60 flex items-center justify-center z-50">
-                <div class="bg-[#1e1e1e] border border-gray-700 p-6 rounded shadow-2xl text-center max-w-sm">
+                <div class="bg-[#1e1e1e] border border-gray-700 p-6 rounded shadow-2xl text-center max-w-sm mx-4">
                     <h2 class="text-white text-lg font-bold mb-2">Device Disconnected</h2>
                     <p class="text-gray-400 text-sm mb-6">Click below to pair with your ESP32 via Web Bluetooth.</p>
-                    <button id="connectBtn" class="bg-gray-100 text-black hover:bg-gray-300 font-bold py-2 px-6 rounded transition w-full">
+                    <button id="connectBtn" class="bg-gray-100 text-black hover:bg-gray-300 font-bold py-3 px-6 rounded transition w-full shadow-lg">
                         CONNECT DEVICE
                     </button>
                     <p id="connStatus" class="text-xs text-gray-500 mt-4"></p>
@@ -127,12 +112,12 @@
         </div>
 
         <!-- Bottom Bar -->
-        <div class="h-10 bg-[#111111] border-t border-gray-800 flex items-center px-2 gap-2 font-osd text-xs">
-            <div class="bg-gray-200 text-black px-2 py-1 flex items-center font-bold">Demo <span class="bg-white px-1 ml-1 text-black text-[10px]">OK</span></div>
-            <div class="bg-yellow-400 text-black px-2 py-1 font-bold flex items-center gap-2">CH1 <span id="btm-voltsdiv" class="font-normal text-gray-800">1.00V/div</span></div>
-            <div class="bg-[#333] text-gray-400 px-2 py-1">CH2 <span class="text-gray-500 ml-2">OFF</span></div>
-            <div class="bg-gray-200 text-black px-2 py-1 flex items-center gap-2 font-bold">TRIG <span id="btm-triglevel" class="font-normal text-gray-800">1.65V</span></div>
-            <div class="ml-auto text-gray-500" id="stat-fps">FPS: 0</div>
+        <div class="h-10 bg-[#111111] border-t border-gray-800 flex items-center px-2 gap-2 font-osd text-xs overflow-x-auto whitespace-nowrap">
+            <div class="bg-gray-200 text-black px-2 py-1 flex items-center font-bold rounded-sm">Demo <span class="bg-white px-1 ml-1 text-black text-[10px] rounded-sm">OK</span></div>
+            <div class="bg-yellow-400 text-black px-2 py-1 font-bold flex items-center gap-2 rounded-sm">CH1 <span id="btm-voltsdiv" class="font-normal text-gray-800">1.00V/div</span></div>
+            <div class="bg-[#333] text-gray-400 px-2 py-1 rounded-sm">CH2 <span class="text-gray-500 ml-2">OFF</span></div>
+            <div class="bg-gray-200 text-black px-2 py-1 flex items-center gap-2 font-bold rounded-sm">TRIG <span id="btm-triglevel" class="font-normal text-gray-800">1.65V</span></div>
+            <div class="ml-auto text-gray-500 pr-2" id="stat-fps">FPS: 0</div>
         </div>
     </main>
 
@@ -140,7 +125,7 @@
     <aside class="w-full landscape:w-[260px] lg:landscape:w-[320px] bg-[#1e1e1e] border-t landscape:border-t-0 landscape:border-l border-gray-800 flex flex-col h-[40dvh] landscape:h-full overflow-y-auto">
         
         <!-- Top Buttons -->
-        <div class="flex p-2 gap-2 border-b border-gray-700">
+        <div class="flex p-2 gap-2 border-b border-gray-700 shrink-0">
             <button id="btn-runstop" class="flex-1 bg-[#2a2a2a] text-white font-bold py-2 text-sm border-active-green hover:bg-[#333]">STOP</button>
             <button class="flex-1 bg-[#2a2a2a] text-white font-bold py-2 text-sm border-active-purple hover:bg-[#333]">MENU >></button>
         </div>
@@ -242,6 +227,10 @@
         let triggerLevelV = 1.65; // Volts
         let currentEdge = 1; // 1 = Rising, 0 = Falling
 
+        // Grid Constants (MOVED TO TOP TO FIX THE JS CRASH)
+        const hDivs = 12; // 12 horizontal divisions
+        const vDivs = 8;  // 8 vertical divisions
+
         // FPS tracking
         let frameCount = 0;
         let lastFpsTime = performance.now();
@@ -260,7 +249,7 @@
         const txtSampleRate = document.getElementById('top-samplerate');
         const btnRunStop = document.getElementById('btn-runstop');
 
-        // Fullscreen Toggle (Great for Mobile Landscape)
+        // Fullscreen Toggle
         document.getElementById('btn-fullscreen').addEventListener('click', () => {
             if (!document.fullscreenElement) {
                 document.documentElement.requestFullscreen().catch(e => console.log(e));
@@ -269,7 +258,7 @@
             }
         });
 
-        // Resize Canvas
+        // Resize Canvas (Now safe to call because hDivs is defined above)
         function resizeCanvas() {
             const rect = canvas.parentElement.getBoundingClientRect();
             canvas.width = rect.width;
@@ -282,23 +271,29 @@
         // --- Bluetooth Logic ---
         document.getElementById('connectBtn').addEventListener('click', async () => {
             try {
-                connStatus.textContent = "Requesting device...";
+                connStatus.textContent = "Requesting device (Check browser popup)...";
+                
+                // CRITICAL FIX: Filtering by service UUID bypasses strict OS naming caches
                 bleDevice = await navigator.bluetooth.requestDevice({
-                    filters: [{ name: 'ESP32_Scope' }],
-                    optionalServices: [SERVICE_UUID]
+                    filters: [{ services: [SERVICE_UUID] }]
                 });
 
-                connStatus.textContent = "Connecting...";
+                connStatus.textContent = "Connecting to device...";
                 bleDevice.addEventListener('gattserverdisconnected', onDisconnect);
                 const server = await bleDevice.gatt.connect();
                 
+                connStatus.textContent = "Getting Services...";
                 const service = await server.getPrimaryService(SERVICE_UUID);
+                
+                connStatus.textContent = "Getting Characteristics...";
                 rxCharacteristic = await service.getCharacteristic(RX_UUID);
                 txCharacteristic = await service.getCharacteristic(TX_UUID);
 
+                connStatus.textContent = "Starting Data Stream...";
                 await txCharacteristic.startNotifications();
                 txCharacteristic.addEventListener('characteristicvaluechanged', handleNotifications);
 
+                // Success
                 overlay.style.display = 'none';
                 isPaused = false;
                 updateRunStateUI();
@@ -338,7 +333,8 @@
             if (rxCharacteristic) {
                 try {
                     let encoder = new TextEncoder();
-                    await rxCharacteristic.writeValue(encoder.encode(cmd));
+                    await rxCharacteristic.writeValueWithoutResponse(encoder.encode(cmd))
+                        .catch(() => rxCharacteristic.writeValue(encoder.encode(cmd))); // Fallback for older browsers
                 } catch(e) { console.error("Write error:", e); }
             }
         }
@@ -353,7 +349,6 @@
         }
 
         // --- UI Interactions ---
-
         function updateLabels() {
             txtTimeDiv.textContent = timeLabels[timeIdx];
             txtVoltsDiv.textContent = voltSettings[voltIdx].toFixed(2) + "V/div";
@@ -441,10 +436,7 @@
             sendCommand("E0");
         });
 
-
         // --- Drawing Engine ---
-        const hDivs = 12; // 12 horizontal divisions
-        const vDivs = 8;  // 8 vertical divisions
 
         function drawGraticule() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -503,9 +495,7 @@
             ctx.stroke();
 
             // Draw Trigger Level Marker (Yellow Arrow on right side)
-            // Map trigger V to screen Y using current scaling
             let voltsPerDiv = voltSettings[voltIdx];
-            // By default, center of screen (h/2) is 1.65V (half of 3.3V)
             let pixelPerVolt = dy / voltsPerDiv;
             let zeroVoltY = (h/2) + (1.65 * pixelPerVolt) + (verticalOffset * dy);
             let trigY = zeroVoltY - (triggerLevelV * pixelPerVolt);
@@ -527,8 +517,7 @@
             let voltsPerDiv = voltSettings[voltIdx];
             let pixelPerVolt = dy / voltsPerDiv;
             
-            // The ESP32 sends 0-255 representing 0-3.3V.
-            // Let's assume the center of the screen is 1.65V to start.
+            // Center is mapped to 1.65V
             let zeroVoltY = (h/2) + (1.65 * pixelPerVolt) + (verticalOffset * dy);
 
             ctx.beginPath();
@@ -540,9 +529,7 @@
             let x = 0;
 
             for (let i = 0; i < data.length; i++) {
-                // Convert 8-bit to Volts
                 let v = (data[i] / 255.0) * 3.3;
-                // Map Volts to Y coordinate
                 let y = zeroVoltY - (v * pixelPerVolt);
 
                 if (i === 0) ctx.moveTo(x, y);
@@ -567,7 +554,6 @@
             document.getElementById('osd-vmin').textContent = "+" + vMinReal.toFixed(2) + "V";
             document.getElementById('osd-vpp').textContent = "+" + vpp.toFixed(2) + "V";
 
-            // Frequency Estimation
             let crossings = 0;
             let firstCrossIdx = -1;
             let lastCrossIdx = -1;
