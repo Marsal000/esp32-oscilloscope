@@ -199,7 +199,7 @@
         
         <!-- Top Buttons -->
         <div class="flex p-4 pb-2 shrink-0">
-            <button id="btn-runstop" class="w-full bg-[#1a1a1a] text-gray-400 border border-gray-700 rounded-sm font-bold py-2 text-sm transition-all hover:bg-[#222] hover:text-white">RUN</button>
+            <button id="btn-runstop" class="w-full bg-yellow-400 text-black border border-yellow-500 rounded-sm font-bold py-2 text-sm transition-all hover:bg-yellow-500">RUN</button>
         </div>
 
         <div class="p-4 pt-2 flex flex-col gap-6">
@@ -877,14 +877,14 @@
         function updateRunStateUI() {
             if (isPaused) {
                 btnRunStop.textContent = "RUN";
-                btnRunStop.classList.remove("bg-yellow-400", "text-black", "border-yellow-500", "hover:bg-yellow-500");
-                btnRunStop.classList.add("bg-[#1a1a1a]", "text-gray-400", "border-gray-700", "hover:bg-[#222]", "hover:text-white");
+                btnRunStop.classList.remove("bg-[#1a1a1a]", "text-gray-400", "border-gray-700", "hover:bg-[#222]", "hover:text-white");
+                btnRunStop.classList.add("bg-yellow-400", "text-black", "border-yellow-500", "hover:bg-yellow-500");
                 txtRunState.textContent = "STOPPED";
                 txtRunState.className = "text-gray-500 font-bold";
             } else {
                 btnRunStop.textContent = "STOP";
-                btnRunStop.classList.remove("bg-[#1a1a1a]", "text-gray-400", "border-gray-700", "hover:bg-[#222]", "hover:text-white");
-                btnRunStop.classList.add("bg-yellow-400", "text-black", "border-yellow-500", "hover:bg-yellow-500");
+                btnRunStop.classList.remove("bg-yellow-400", "text-black", "border-yellow-500", "hover:bg-yellow-500");
+                btnRunStop.classList.add("bg-[#1a1a1a]", "text-gray-400", "border-gray-700", "hover:bg-[#222]", "hover:text-white");
                 
                 let modeStr = triggerMode === 0 ? "FREE RUN" : (triggerMode === 1 ? "AUTO TRIG" : "NORM TRIG");
                 txtRunState.textContent = "RUNNING - " + modeStr;
