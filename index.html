@@ -247,7 +247,7 @@
         let triggerLevelV = 1.65; // Volts
         let currentEdge = 1; // 1 = Rising, 0 = Falling
 
-        // Grid Constants (MOVED TO TOP TO FIX THE JS CRASH)
+        // Grid Constants
         const hDivs = 12; // 12 horizontal divisions
         const vDivs = 8;  // 8 vertical divisions
 
@@ -278,7 +278,7 @@
             }
         });
 
-        // Resize Canvas (Now safe to call because hDivs is defined above)
+        // Resize Canvas
         function resizeCanvas() {
             const rect = canvas.parentElement.getBoundingClientRect();
             canvas.width = rect.width;
@@ -293,7 +293,6 @@
             try {
                 connStatus.textContent = "Requesting device (Check browser popup)...";
                 
-                // CRITICAL FIX: Filtering by service UUID bypasses strict OS naming caches
                 bleDevice = await navigator.bluetooth.requestDevice({
                     filters: [{ services: [SERVICE_UUID] }]
                 });
@@ -581,16 +580,35 @@
             ctx.lineJoin = 'round';
 
             const sliceWidth = w / data.length;
-            let x = xOffset;
+            let firstPoint = true;
 
-            for (let i = 0; i < data.length; i++) {
-                let v = (data[i] / 255.0) * 3.3;
-                let y = zeroVoltY - (v * pixelPerVolt);
+            // Helper to draw a continuous segment of the 400 points
+            const drawSegment = (startX) => {
+                let x = startX;
+                for (let i = 0; i < data.length; i++) {
+                    let v = (data[i] / 255.0) * 3.3;
+                    let y = zeroVoltY - (v * pixelPerVolt);
 
-                if (i === 0) ctx.moveTo(x, y);
-                else ctx.lineTo(x, y);
-                x += sliceWidth;
-            }
+                    // Connect edges seamlessly
+                    if (firstPoint) {
+                        ctx.moveTo(x, y);
+                        firstPoint = false;
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                    x += sliceWidth;
+                }
+            };
+
+            // Wrap logic: If panned right, fill the void on the left
+            if (xOffset > 0) drawSegment(xOffset - w);
+            
+            // Draw main wave block
+            drawSegment(xOffset);
+            
+            // Wrap logic: If panned left, fill the void on the right
+            if (xOffset < 0) drawSegment(xOffset + w);
+
             ctx.stroke();
         }
 
