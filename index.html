@@ -28,49 +28,9 @@
         ::-webkit-scrollbar-track { background: #1e1e1e; }
         ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
 
-        .btn-ui {
-            background-color: #374151;
-            color: #e5e7eb;
-            border-radius: 4px;
-            text-align: center;
-            font-weight: 500;
-            font-size: 0.75rem;
-            transition: background-color 0.1s;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 32px;
-        }
-        .btn-ui:hover { background-color: #4b5563; }
-        .btn-ui:active { background-color: #1f2937; }
-
         /* Draggable parameters cursor style */
         .btn-draggable {
             cursor: ew-resize !important;
-        }
-        
-        /* Active States */
-        .tab-active { color: #fbbf24; }
-        .border-active-green { border-bottom: 3px solid #10b981; }
-        .border-active-purple { border-bottom: 3px solid #8b5cf6; }
-
-        /* Custom Slider Thumb styling to match Scoppy hardware dial looks */
-        #offsetSlider::-webkit-slider-thumb {
-            appearance: none;
-            width: 14px;
-            height: 14px;
-            background: #d1d5db;
-            cursor: pointer;
-            border-radius: 2px;
-        }
-        #offsetSlider::-moz-range-thumb {
-            width: 14px;
-            height: 14px;
-            background: #d1d5db;
-            cursor: pointer;
-            border-radius: 2px;
-            border: none;
         }
 
         #scopeCanvas {
@@ -82,7 +42,7 @@
             display: block;
             width: 100%;
             height: 100%;
-            position: absolute;
+            position: absolute; /* Fixes fullscreen container flexbox squish bug */
             top: 0;
             left: 0;
         }
@@ -98,7 +58,7 @@
             font-family: 'Share Tech Mono', monospace;
         }
 
-        /* Custom Transparent Selection colors matching the user-requested yellow style */
+        /* Custom Transparent Selection colors */
         input::selection {
             background: rgba(59, 130, 246, 0.4) !important;
             color: #fbbf24 !important;
@@ -135,11 +95,9 @@
                 <span class="hidden sm:inline">400 pts</span>
             </div>
             <div class="flex gap-4 items-center">
-                <!-- Functional Range Slider -->
-                <input type="range" id="offsetSlider" min="-5" max="5" step="0.1" value="0" class="w-24 h-1 bg-gray-600 appearance-none outline-none hidden sm:block">
                 <span id="top-timediv">500us/div</span>
                 <!-- Interactive clickable divs offset readout -->
-                <span id="top-trigoffset" class="hidden sm:inline select-none">0.0 divs</span>
+                <span id="top-trigoffset" class="hidden sm:inline select-none cursor-pointer hover:text-[#fbbf24] transition-colors">0.0 divs</span>
                 <!-- Clean interactive fullscreen button -->
                 <button id="btn-fullscreen" class="text-gray-400 hover:text-white ml-1 p-1 rounded hover:bg-gray-800 transition-colors" title="Toggle Fullscreen">
                     <svg id="svg-fullscreen" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -167,7 +125,7 @@
                 <div class="text-gray-300">Freq: <span id="osd-freq">-- Hz</span></div>
             </div>
 
-            <!-- Connect Overlay (Hidden by default for Demo Mode) -->
+            <!-- Connect Overlay -->
             <div id="connectOverlay" class="absolute inset-0 bg-black/60 flex items-center justify-center z-50" style="display: none;">
                 <div class="bg-[#1e1e1e] border border-gray-700 p-6 rounded shadow-2xl text-center max-w-sm mx-4">
                     <h2 class="text-white text-lg font-bold mb-2">Device Disconnected</h2>
@@ -209,12 +167,12 @@
                 <h3 class="text-gray-400 text-xs mb-3">Horizontal</h3>
                 <div class="flex border border-gray-700 rounded-sm overflow-hidden h-8 mb-2">
                     <button class="w-10 bg-[#1a1a1a] text-gray-400 hover:bg-[#333] hover:text-white transition text-lg flex items-center justify-center" id="btn-time-minus">-</button>
-                    <button class="flex-1 bg-[#222] hover:bg-[#333] transition text-xs font-bold text-gray-300 border-x border-gray-700 flex items-center justify-center" id="btn-time-val">TIME/DIV</button>
+                    <button class="flex-1 bg-[#222] transition text-xs font-bold text-gray-300 border-x border-gray-700 flex items-center justify-center" id="btn-time-val">TIME/DIV</button>
                     <button class="w-10 bg-[#1a1a1a] text-gray-400 hover:bg-[#333] hover:text-white transition text-lg flex items-center justify-center" id="btn-time-plus">+</button>
                 </div>
                 <div class="flex border border-gray-700 rounded-sm overflow-hidden h-8">
                     <button class="w-10 bg-[#1a1a1a] text-gray-400 hover:bg-[#333] hover:text-white transition text-lg flex items-center justify-center" id="btn-hpos-minus">-</button>
-                    <button class="flex-1 bg-[#222] hover:bg-[#333] transition text-xs font-bold text-gray-300 border-x border-gray-700 flex items-center justify-center" id="btn-hpos-val">POSITION</button>
+                    <button class="flex-1 bg-[#222] transition text-xs font-bold text-gray-300 border-x border-gray-700 flex items-center justify-center" id="btn-hpos-val">POSITION</button>
                     <button class="w-10 bg-[#1a1a1a] text-gray-400 hover:bg-[#333] hover:text-white transition text-lg flex items-center justify-center" id="btn-hpos-plus">+</button>
                 </div>
             </section>
@@ -227,17 +185,17 @@
                     <h3 class="text-gray-400 text-xs">Vertical</h3>
                     <div class="flex border border-gray-700 rounded-sm overflow-hidden text-[10px] font-bold w-24 h-6">
                         <button class="flex-1 bg-yellow-400 text-black">CH1</button>
-                        <button class="flex-1 bg-[#1a1a1a] text-gray-500 hover:bg-[#222]">CH2</button>
+                        <button class="flex-1 bg-[#1a1a1a] text-gray-600 cursor-not-allowed" title="Hardware limited to 1 Channel">CH2</button>
                     </div>
                 </div>
                 <div class="flex border border-gray-700 rounded-sm overflow-hidden h-8 mb-2">
                     <button class="w-10 bg-[#1a1a1a] text-gray-400 hover:bg-[#333] hover:text-white transition text-lg flex items-center justify-center" id="btn-volt-minus">-</button>
-                    <button class="flex-1 bg-[#222] hover:bg-[#333] transition text-xs font-bold text-gray-300 border-x border-gray-700 flex items-center justify-center" id="btn-volt-val">VOLTS/DIV</button>
+                    <button class="flex-1 bg-[#222] transition text-xs font-bold text-gray-300 border-x border-gray-700 flex items-center justify-center" id="btn-volt-val">VOLTS/DIV</button>
                     <button class="w-10 bg-[#1a1a1a] text-gray-400 hover:bg-[#333] hover:text-white transition text-lg flex items-center justify-center" id="btn-volt-plus">+</button>
                 </div>
                 <div class="flex border border-gray-700 rounded-sm overflow-hidden h-8">
                     <button class="w-10 bg-[#1a1a1a] text-gray-400 hover:bg-[#333] hover:text-white transition text-lg flex items-center justify-center" id="btn-vpos-minus">-</button>
-                    <button class="flex-1 bg-[#222] hover:bg-[#333] transition text-xs font-bold text-gray-300 border-x border-gray-700 flex items-center justify-center" id="btn-vpos-val">POSITION</button>
+                    <button class="flex-1 bg-[#222] transition text-xs font-bold text-gray-300 border-x border-gray-700 flex items-center justify-center" id="btn-vpos-val">POSITION</button>
                     <button class="w-10 bg-[#1a1a1a] text-gray-400 hover:bg-[#333] hover:text-white transition text-lg flex items-center justify-center" id="btn-vpos-plus">+</button>
                 </div>
             </section>
@@ -250,7 +208,7 @@
                     <h3 class="text-gray-400 text-xs">Trigger</h3>
                     <div class="flex border border-gray-700 rounded-sm overflow-hidden text-[10px] font-bold w-24 h-6">
                         <button class="flex-1 bg-yellow-400 text-black">CH1</button>
-                        <button class="flex-1 bg-[#1a1a1a] text-gray-500 hover:bg-[#222]">CH2</button>
+                        <button class="flex-1 bg-[#1a1a1a] text-gray-600 cursor-not-allowed" title="Hardware limited to 1 Channel">CH2</button>
                     </div>
                 </div>
                 
@@ -262,7 +220,7 @@
 
                 <div class="flex border border-gray-700 rounded-sm overflow-hidden h-8 mb-3">
                     <button class="w-10 bg-[#1a1a1a] text-gray-400 hover:bg-[#333] hover:text-white transition text-lg flex items-center justify-center" id="btn-trigl-minus">-</button>
-                    <button class="flex-1 bg-[#222] hover:bg-[#333] transition text-xs font-bold text-gray-300 border-x border-gray-700 flex items-center justify-center" id="btn-trigl-val">LEVEL</button>
+                    <button class="flex-1 bg-[#222] transition text-xs font-bold text-gray-300 border-x border-gray-700 flex items-center justify-center" id="btn-trigl-val">LEVEL</button>
                     <button class="w-10 bg-[#1a1a1a] text-gray-400 hover:bg-[#333] hover:text-white transition text-lg flex items-center justify-center" id="btn-trigl-plus">+</button>
                 </div>
 
@@ -294,8 +252,6 @@
         let voltsPerDiv = 1.0; 
         let verticalOffset = 0; // divisions
         let horizontalOffsetDivs = 0; // divisions
-        
-        // Trigger Settings
         let triggerLevelV = 1.65; // Volts
         let currentEdge = 1; // 1 = Rising, 0 = Falling
         let triggerMode = 1; // 0 = NONE, 1 = AUTO, 2 = NORM
@@ -342,6 +298,10 @@
         const btnTrigNone = document.getElementById('btn-trig-none');
         const btnTrigAuto = document.getElementById('btn-trig-auto');
         const btnTrigNorm = document.getElementById('btn-trig-norm');
+
+        // Edge Buttons
+        const btnEdgeRise = document.getElementById('btn-edge-rise');
+        const btnEdgeFall = document.getElementById('btn-edge-fall');
 
         // Responsive clean SVG paths for fullscreen
         const pathExpand = "M21 21l-6-6 M21 21v-4.8 M21 21h-4.8 M3 16.2V21 M3 21h4.8 M3 21l6-6 M21 7.8V3 M21 3h-4.8 M21 3l-6 6 M3 7.8V3 M3 3h4.8 M3 3l6 6";
@@ -462,7 +422,7 @@
                 btnModeDemo.className = "px-3 py-1 transition-all bg-[#1a1a1a] text-gray-500 hover:text-gray-300 cursor-pointer";
 
                 if (bleDevice && bleDevice.gatt.connected) {
-                    btnModeBle.className = "px-3 py-1 transition-all bg-yellow-400 text-black font-bold cursor-pointer";
+                    btnModeBle.className = "px-3 py-1 transition-all bg-emerald-500 text-white font-bold cursor-pointer";
                     overlay.style.display = 'none';
                 } else {
                     btnModeBle.className = "px-3 py-1 transition-all bg-yellow-400 text-black font-bold cursor-pointer";
@@ -484,8 +444,21 @@
             updateDemoUI();
         });
 
-        // --- Bluetooth Logic ---
-        document.getElementById('connectBtn').addEventListener('click', async () => {
+        // --- Bluetooth Logic & Browser Compatibility Check ---
+        const connectBtn = document.getElementById('connectBtn');
+        
+        // Disable connection if the browser doesn't support Web Bluetooth (e.g., iOS Safari)
+        if (!navigator.bluetooth) {
+            connectBtn.disabled = true;
+            connectBtn.textContent = "BROWSER UNSUPPORTED";
+            connectBtn.classList.replace('bg-gray-100', 'bg-red-900');
+            connectBtn.classList.replace('text-black', 'text-white');
+            connectBtn.classList.replace('hover:bg-gray-300', 'hover:bg-red-900');
+            connectBtn.classList.add('cursor-not-allowed');
+            connStatus.innerHTML = "<span class='text-red-400'>Web Bluetooth is blocked or unsupported (e.g. iOS). Use Chrome/Edge on Desktop or Android.</span>";
+        }
+
+        connectBtn.addEventListener('click', async () => {
             try {
                 connStatus.textContent = "Requesting device (Check browser popup)...";
                 
@@ -635,16 +608,15 @@
 
             const applyDragVisuals = (newVal) => {
                 btn.textContent = formatValueForBtn(btnId, newVal);
-                btn.classList.add('font-osd');
-                // Lock the background to the hover color so it doesn't change when mouse leaves
-                btn.classList.replace('bg-[#222]', 'bg-[#333]');
+                btn.classList.add('font-osd', 'text-[#fbbf24]');
+                btn.classList.remove('bg-[#222]', 'text-gray-300');
+                btn.classList.add('bg-[#333]'); // Locked hover state
             };
 
             const clearDragVisuals = () => {
                 btn.textContent = originalText;
-                btn.classList.remove('font-osd');
-                // Restore original background
-                btn.classList.replace('bg-[#333]', 'bg-[#222]');
+                btn.classList.remove('font-osd', 'text-[#fbbf24]', 'bg-[#333]');
+                btn.classList.add('bg-[#222]', 'text-gray-300');
             };
 
             // PC Mouse Dragging Mechanics
@@ -815,7 +787,6 @@
         }, { type: 'linear', step: 0.012, min: 0, max: 3.3 });
 
         // --- Interactive Trigger Offset Readout Click ---
-        txtTrigOffset.classList.add('cursor-pointer', 'hover:text-[#fbbf24]', 'transition-colors');
         txtTrigOffset.addEventListener('click', () => {
             if (isMobileDevice) {
                 openValueModal('Horizontal Offset (divs)', horizontalOffsetDivs, (newVal) => {
@@ -877,14 +848,12 @@
         function updateRunStateUI() {
             if (isPaused) {
                 btnRunStop.textContent = "RUN";
-                btnRunStop.classList.remove("bg-[#1a1a1a]", "text-gray-400", "border-gray-700", "hover:bg-[#222]", "hover:text-white");
-                btnRunStop.classList.add("bg-yellow-400", "text-black", "border-yellow-500", "hover:bg-yellow-500");
+                btnRunStop.className = "w-full bg-yellow-400 text-black border border-yellow-500 rounded-sm font-bold py-2 text-sm transition-all hover:bg-yellow-500";
                 txtRunState.textContent = "STOPPED";
                 txtRunState.className = "text-gray-500 font-bold";
             } else {
                 btnRunStop.textContent = "STOP";
-                btnRunStop.classList.remove("bg-yellow-400", "text-black", "border-yellow-500", "hover:bg-yellow-500");
-                btnRunStop.classList.add("bg-[#1a1a1a]", "text-gray-400", "border-gray-700", "hover:bg-[#222]", "hover:text-white");
+                btnRunStop.className = "w-full bg-[#1a1a1a] text-gray-400 border border-gray-700 rounded-sm font-bold py-2 text-sm transition-all hover:bg-[#222] hover:text-white";
                 
                 let modeStr = triggerMode === 0 ? "FREE RUN" : (triggerMode === 1 ? "AUTO TRIG" : "NORM TRIG");
                 txtRunState.textContent = "RUNNING - " + modeStr;
@@ -899,21 +868,11 @@
         });
 
         // Trigger Modes Setup
-        function setSegmentedActive(btn, isActive) {
-            if (isActive) {
-                btn.classList.remove('bg-[#1a1a1a]', 'text-gray-500', 'hover:bg-[#222]');
-                btn.classList.add('bg-yellow-400', 'text-black');
-            } else {
-                btn.classList.remove('bg-yellow-400', 'text-black');
-                btn.classList.add('bg-[#1a1a1a]', 'text-gray-500', 'hover:bg-[#222]');
-            }
-        }
-
         function setTriggerMode(mode) {
             triggerMode = mode;
-            setSegmentedActive(btnTrigNone, mode === 0);
-            setSegmentedActive(btnTrigAuto, mode === 1);
-            setSegmentedActive(btnTrigNorm, mode === 2);
+            btnTrigNone.className = mode === 0 ? "flex-1 bg-yellow-400 text-black transition" : "flex-1 bg-[#1a1a1a] text-gray-500 hover:bg-[#222] transition";
+            btnTrigAuto.className = mode === 1 ? "flex-1 bg-yellow-400 text-black transition border-x border-gray-700" : "flex-1 bg-[#1a1a1a] text-gray-500 hover:bg-[#222] transition border-x border-gray-700";
+            btnTrigNorm.className = mode === 2 ? "flex-1 bg-yellow-400 text-black transition" : "flex-1 bg-[#1a1a1a] text-gray-500 hover:bg-[#222] transition";
             updateRunStateUI();
             sendCommand("M" + mode);
         }
@@ -922,36 +881,30 @@
         btnTrigAuto.addEventListener('click', () => setTriggerMode(1));
         btnTrigNorm.addEventListener('click', () => setTriggerMode(2));
 
+        // + / - Buttons Logic (Corrected Math: + increases value / zooms out scale, - decreases value / zooms in scale)
         document.getElementById('btn-time-minus').addEventListener('click', () => {
-            let next = timeSettings.find(t => t > timebaseUs + 0.1);
+            let next = [...timeSettings].reverse().find(t => t < timebaseUs - 0.1);
             if(next) { timebaseUs = next; updateLabels(); sendCommand("T" + Math.round(timebaseUs)); }
         });
         document.getElementById('btn-time-plus').addEventListener('click', () => {
-            let next = [...timeSettings].reverse().find(t => t < timebaseUs - 0.1);
+            let next = timeSettings.find(t => t > timebaseUs + 0.1);
             if(next) { timebaseUs = next; updateLabels(); sendCommand("T" + Math.round(timebaseUs)); }
         });
 
         document.getElementById('btn-volt-minus').addEventListener('click', () => {
-            let next = voltSettings.find(v => v > voltsPerDiv + 0.001);
-            if(next) { voltsPerDiv = next; updateLabels(); }
-        });
-        document.getElementById('btn-volt-plus').addEventListener('click', () => {
             let next = [...voltSettings].reverse().find(v => v < voltsPerDiv - 0.001);
             if(next) { voltsPerDiv = next; updateLabels(); }
         });
+        document.getElementById('btn-volt-plus').addEventListener('click', () => {
+            let next = voltSettings.find(v => v > voltsPerDiv + 0.001);
+            if(next) { voltsPerDiv = next; updateLabels(); }
+        });
 
-        const offsetSlider = document.getElementById('offsetSlider');
         function updateHorizontalOffsetUI() {
             let sign = horizontalOffsetDivs >= 0 ? '+' : '';
             txtTrigOffset.textContent = sign + horizontalOffsetDivs.toFixed(1) + " divs";
-            offsetSlider.value = horizontalOffsetDivs;
             drawWaveform(lastData);
         }
-
-        offsetSlider.addEventListener('input', (e) => {
-            horizontalOffsetDivs = parseFloat(e.target.value);
-            updateHorizontalOffsetUI();
-        });
 
         document.getElementById('btn-hpos-minus').addEventListener('click', () => {
             horizontalOffsetDivs = Math.max(-5, horizontalOffsetDivs - 0.1);
@@ -977,6 +930,23 @@
         let startDragX = 0;
         let startDragY = 0;
         const DRAG_THRESHOLD = 5; 
+
+        // Helper functions to temporarily highlight menu buttons during canvas drag
+        function highlightMenuPos(btnId, val) {
+            const btn = document.getElementById(btnId);
+            if (!btn) return;
+            btn.textContent = formatValueForBtn(btnId, val);
+            btn.classList.add('font-osd', 'text-[#fbbf24]', 'bg-[#333]');
+            btn.classList.remove('bg-[#222]', 'text-gray-300');
+        }
+
+        function resetMenuPos(btnId) {
+            const btn = document.getElementById(btnId);
+            if (!btn) return;
+            btn.textContent = "POSITION";
+            btn.classList.remove('font-osd', 'text-[#fbbf24]', 'bg-[#333]');
+            btn.classList.add('bg-[#222]', 'text-gray-300');
+        }
 
         const handleDragStart = (clientX, clientY) => {
             isDragging = true;
@@ -1014,9 +984,13 @@
                 horizontalOffsetDivs += (deltaX / dx_px);
                 horizontalOffsetDivs = Math.max(-5, Math.min(5, horizontalOffsetDivs)); 
                 updateHorizontalOffsetUI(); 
+                highlightMenuPos('btn-hpos-val', horizontalOffsetDivs);
+                resetMenuPos('btn-vpos-val');
             } else if (dragAxis === 'y') {
                 verticalOffset -= (deltaY / dy_px);
                 drawWaveform(lastData); 
+                highlightMenuPos('btn-vpos-val', verticalOffset);
+                resetMenuPos('btn-hpos-val');
             }
         };
 
@@ -1024,6 +998,8 @@
             isDragging = false;
             dragAxis = null;
             canvas.style.cursor = 'move'; 
+            resetMenuPos('btn-hpos-val');
+            resetMenuPos('btn-vpos-val');
         };
 
         canvas.addEventListener('mousedown', (e) => handleDragStart(e.clientX, e.clientY));
@@ -1054,18 +1030,16 @@
             updateLabels();
         });
 
-        const btnEdgeRise = document.getElementById('btn-edge-rise');
-        const btnEdgeFall = document.getElementById('btn-edge-fall');
         btnEdgeRise.addEventListener('click', () => {
             currentEdge = 1;
-            setSegmentedActive(btnEdgeRise, true);
-            setSegmentedActive(btnEdgeFall, false);
+            btnEdgeRise.className = "flex-1 bg-yellow-400 text-black transition border-r border-gray-700";
+            btnEdgeFall.className = "flex-1 bg-[#1a1a1a] text-gray-500 hover:bg-[#222] transition";
             sendCommand("E1");
         });
         btnEdgeFall.addEventListener('click', () => {
             currentEdge = 0;
-            setSegmentedActive(btnEdgeFall, true);
-            setSegmentedActive(btnEdgeRise, false);
+            btnEdgeFall.className = "flex-1 bg-yellow-400 text-black transition";
+            btnEdgeRise.className = "flex-1 bg-[#1a1a1a] text-gray-500 hover:bg-[#222] transition border-r border-gray-700";
             sendCommand("E0");
         });
 
