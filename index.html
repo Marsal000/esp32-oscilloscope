@@ -121,9 +121,9 @@
             <!-- OSD Stats (Bottom Left) -->
             <div class="absolute bottom-4 left-4 font-osd text-xs leading-tight pointer-events-none">
                 <div class="text-yellow-400 mb-1">CH1</div>
-                <div class="text-gray-300">Vmin: <span id="osd-vmin">+0.00</span></div>
-                <div class="text-gray-300">Vmax: <span id="osd-vmax">+0.00</span></div>
-                <div class="text-gray-300">Vpp:  <span id="osd-vpp">+0.00</span></div>
+                <div class="text-gray-300">Vmin: <span id="osd-vmin">+0.00V</span></div>
+                <div class="text-gray-300">Vmax: <span id="osd-vmax">+0.00V</span></div>
+                <div class="text-gray-300">Vpp:  <span id="osd-vpp">+0.00V</span></div>
                 <div class="text-gray-300">Freq: <span id="osd-freq">-- Hz</span></div>
             </div>
 
@@ -268,7 +268,9 @@
         const hDivs = 12; // 12 horizontal divisions
         const vDivs = 8;  // 8 vertical divisions
 
-        // FPS tracking
+        // Optimized Rendering State
+        let renderPending = false;
+        let lastStatsUpdateTime = 0;
         let frameCount = 0;
         let lastFpsTime = performance.now();
 
@@ -334,10 +336,45 @@
             const rect = canvas.parentElement.getBoundingClientRect();
             canvas.width = rect.width;
             canvas.height = rect.height;
-            drawGraticule(); // Redraw grid immediately
+            if (hasReceivedData) drawWaveform(lastData);
+            else drawGraticule();
         }
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
+
+        // --- NEW: Hardware Accelerated Render Queue ---
+        // Prevents browser from locking up when flooded with BLE data
+        function queueRender(data, markAsReceived = false) {
+            if (markAsReceived) hasReceivedData = true;
+            lastData.set(data);
+            
+            if (!renderPending) {
+                renderPending = true;
+                requestAnimationFrame(() => {
+                    // 1. Draw Waveform (Happens safely on monitor refresh)
+                    drawWaveform(lastData);
+                    
+                    let now = performance.now();
+                    
+                    // 2. Throttle DOM Stat Updates (Massive CPU Saver)
+                    // Updates the text fields only ~5 times a second (every 200ms)
+                    if (now - lastStatsUpdateTime > 200) {
+                        calculateStats(lastData);
+                        lastStatsUpdateTime = now;
+                    }
+                    
+                    // 3. Track Frames Per Second
+                    frameCount++;
+                    if (now - lastFpsTime >= 1000) {
+                        document.getElementById('stat-fps').textContent = `FPS: ${frameCount}`;
+                        frameCount = 0;
+                        lastFpsTime = now;
+                    }
+                    
+                    renderPending = false; // Unblock next frame
+                });
+            }
+        }
 
         // --- Demo Mode Logic ---
         function generateDemoWave() {
@@ -390,18 +427,8 @@
                 data[i] = val;
             }
             
-            hasReceivedData = true;
-            lastData.set(data);
-            drawWaveform(data);
-            calculateStats(data);
-            
-            frameCount++;
-            let now = performance.now();
-            if (now - lastFpsTime >= 1000) {
-                document.getElementById('stat-fps').textContent = `FPS: ${frameCount}`;
-                frameCount = 0;
-                lastFpsTime = now;
-            }
+            // Push to optimized render loop instead of synchronous drawing
+            queueRender(data, true);
         }
 
         function updateDemoUI() {
@@ -429,8 +456,9 @@
                 } else {
                     btnModeBle.className = "px-3 py-1 transition-all bg-yellow-400 text-black font-bold cursor-pointer";
                     overlay.style.display = 'flex';
+                    hasReceivedData = false;
                     lastData.fill(0);
-                    drawWaveform(lastData);
+                    drawGraticule();
                 }
             }
         }
@@ -499,6 +527,8 @@
         function onDisconnect() {
             connStatus.textContent = "Connection lost. Please reconnect.";
             isPaused = true;
+            hasReceivedData = false;
+            lastData.fill(0);
             updateRunStateUI();
             updateDemoUI(); 
         }
@@ -512,35 +542,22 @@
             
             const incomingData = new Uint8Array(event.target.value.buffer);
             
+            // Fast Path: Received entire array in one MTU packet
             if (incomingData.length === BUFFER_SIZE) {
-                processCompleteFrame(incomingData);
+                queueRender(incomingData, true);
                 return;
             }
             
+            // Slow Path: MTU was small, packets are fragmented, reassemble them
             for(let i = 0; i < incomingData.length; i++) {
                 if(bleRxIndex < BUFFER_SIZE) {
                     bleRxBuffer[bleRxIndex++] = incomingData[i];
                 }
                 
                 if (bleRxIndex >= BUFFER_SIZE) {
-                    processCompleteFrame(bleRxBuffer);
+                    queueRender(bleRxBuffer, true);
                     bleRxIndex = 0; 
                 }
-            }
-        }
-
-        function processCompleteFrame(data) {
-            hasReceivedData = true;
-            lastData.set(data);
-            drawWaveform(data);
-            calculateStats(data);
-            
-            frameCount++;
-            let now = performance.now();
-            if (now - lastFpsTime >= 1000) {
-                document.getElementById('stat-fps').textContent = `FPS: ${frameCount}`;
-                frameCount = 0;
-                lastFpsTime = now;
             }
         }
 
@@ -801,7 +818,7 @@
 
         bindSmartInput('btn-vpos-val', 'Vertical Position (divs)', () => verticalOffset, (newVal) => {
             verticalOffset = newVal;
-            drawWaveform(lastData);
+            if(!renderPending) queueRender(lastData);
         }, { type: 'linear', step: 0.04, min: -15, max: 15 });
 
         bindSmartInput('btn-trigl-val', 'Trigger Level (V)', () => triggerLevelV, (newVal) => {
@@ -908,8 +925,8 @@
             let sr = 1000000 / delayUs;
             txtSampleRate.textContent = (sr / 1000).toFixed(1) + " kS/s";
             
-            if (lastData && lastData.length > 0) drawWaveform(lastData);
-            else drawGraticule(); 
+            if (hasReceivedData) queueRender(lastData);
+            else drawGraticule();
         }
 
         function updateRunStateUI() {
@@ -948,7 +965,7 @@
         btnTrigAuto.addEventListener('click', () => setTriggerMode(1));
         btnTrigNorm.addEventListener('click', () => setTriggerMode(2));
 
-        // + / - Buttons Logic (Corrected Math: + increases value / zooms out scale, - decreases value / zooms in scale)
+        // + / - Buttons Logic
         document.getElementById('btn-time-minus').addEventListener('click', () => {
             let next = [...timeSettings].reverse().find(t => t < timebaseUs - 0.1);
             if(next) { timebaseUs = next; updateLabels(); sendCommand("T" + Math.round(timebaseUs)); }
@@ -970,7 +987,7 @@
         function updateHorizontalOffsetUI() {
             let sign = horizontalOffsetDivs >= 0 ? '+' : '';
             txtTrigOffset.textContent = sign + horizontalOffsetDivs.toFixed(1) + " divs";
-            drawWaveform(lastData);
+            queueRender(lastData);
         }
 
         document.getElementById('btn-hpos-minus').addEventListener('click', () => {
@@ -983,10 +1000,10 @@
         });
 
         document.getElementById('btn-vpos-minus').addEventListener('click', () => {
-            verticalOffset -= 0.5; drawWaveform(lastData);
+            verticalOffset -= 0.5; queueRender(lastData);
         });
         document.getElementById('btn-vpos-plus').addEventListener('click', () => {
-            verticalOffset += 0.5; drawWaveform(lastData);
+            verticalOffset += 0.5; queueRender(lastData);
         });
 
         // --- Canvas Dragging (Waveform Pan) Logic ---
@@ -1055,7 +1072,7 @@
                 resetMenuPos('btn-vpos-val');
             } else if (dragAxis === 'y') {
                 verticalOffset -= (deltaY / dy_px);
-                drawWaveform(lastData); 
+                queueRender(lastData); 
                 highlightMenuPos('btn-vpos-val', verticalOffset);
                 resetMenuPos('btn-hpos-val');
             }
