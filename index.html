@@ -35,19 +35,18 @@
 
         #scopeCanvas {
             cursor: move;
-            touch-action: none; /* Prevents mobile scrolling while dragging the wave */
+            touch-action: none;
         }
 
         canvas {
             display: block;
             width: 100%;
             height: 100%;
-            position: absolute; /* Fixes fullscreen container flexbox squish bug */
+            position: absolute;
             top: 0;
             left: 0;
         }
 
-        /* Number input hides arrows */
         input[type=number]::-webkit-inner-spin-button, 
         input[type=number]::-webkit-outer-spin-button { 
             -webkit-appearance: none; 
@@ -58,7 +57,6 @@
             font-family: 'Share Tech Mono', monospace;
         }
 
-        /* Custom Transparent Selection colors */
         input::selection {
             background: rgba(59, 130, 246, 0.4) !important;
             color: #fbbf24 !important;
@@ -71,7 +69,7 @@
 </head>
 <body class="w-screen flex flex-col landscape:flex-row">
 
-    <!-- Value Input Modal (Used on Mobile Only) -->
+    <!-- Value Input Modal -->
     <div id="valueModal" class="absolute inset-0 bg-black/60 items-center justify-center z-[100] hidden">
         <div class="bg-[#2a2a2a] rounded-sm shadow-2xl max-w-[320px] w-full mx-4 border border-gray-700">
             <div class="p-6">
@@ -96,9 +94,7 @@
             </div>
             <div class="flex gap-4 items-center">
                 <span id="top-timediv">500us/div</span>
-                <!-- Interactive clickable divs offset readout -->
                 <span id="top-trigoffset" class="hidden sm:inline select-none cursor-pointer hover:text-[#fbbf24] transition-colors">0.0 divs</span>
-                <!-- Clean interactive fullscreen button -->
                 <button id="btn-fullscreen" class="text-gray-400 hover:text-white ml-1 p-1 rounded hover:bg-gray-800 transition-colors" title="Toggle Fullscreen">
                     <svg id="svg-fullscreen" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6 M21 21v-4.8 M21 21h-4.8 M3 16.2V21 M3 21h4.8 M3 21l6-6 M21 7.8V3 M21 3h-4.8 M21 3l-6 6 M3 7.8V3 M3 3h4.8 M3 3l6 6" />
@@ -111,12 +107,10 @@
         <div class="flex-1 relative bg-[#0a0a0a] min-h-0">
             <canvas id="scopeCanvas"></canvas>
             
-            <!-- Trigger Status Text (Top Right) -->
             <div class="absolute top-2 right-4 text-right font-osd text-xs pointer-events-none">
                 <div id="osd-runstate" class="text-gray-500 font-bold">STOPPED</div>
             </div>
 
-            <!-- OSD Stats (Bottom Left) -->
             <div class="absolute bottom-4 left-4 font-osd text-xs leading-tight pointer-events-none">
                 <div class="text-yellow-400 mb-1">CH1</div>
                 <div class="text-gray-300">Vmin: <span id="osd-vmin">+0.00</span></div>
@@ -125,7 +119,6 @@
                 <div class="text-gray-300">Freq: <span id="osd-freq">-- Hz</span></div>
             </div>
 
-            <!-- Connect Overlay -->
             <div id="connectOverlay" class="absolute inset-0 bg-black/60 flex items-center justify-center z-50" style="display: none;">
                 <div class="bg-[#1e1e1e] border border-gray-700 p-6 rounded shadow-2xl text-center max-w-sm mx-4">
                     <h2 class="text-white text-lg font-bold mb-2">Device Disconnected</h2>
@@ -140,7 +133,6 @@
 
         <!-- Bottom Bar -->
         <div class="h-10 shrink-0 bg-[#111111] border-t border-gray-800 flex items-center px-2 gap-2 font-osd text-xs overflow-x-auto whitespace-nowrap">
-            <!-- Segmented Mode Selector (DEMO vs BLE) -->
             <div class="flex border border-gray-700 rounded-sm overflow-hidden text-[10px] font-bold shrink-0">
                 <button id="btn-mode-demo" class="px-3 py-1 transition-all focus:outline-none">DEMO</button>
                 <button id="btn-mode-ble" class="px-3 py-1 transition-all focus:outline-none">BLE</button>
@@ -154,15 +146,11 @@
 
     <!-- Right Control Panel -->
     <aside class="w-full landscape:w-[260px] lg:landscape:w-[320px] bg-[#1e1e1e] border-t landscape:border-t-0 landscape:border-l border-gray-800 flex flex-col h-[40dvh] landscape:h-full overflow-y-auto">
-        
-        <!-- Top Buttons -->
         <div class="flex p-4 pb-2 shrink-0">
             <button id="btn-runstop" class="w-full bg-yellow-400 text-black border border-yellow-500 rounded-sm font-bold py-2 text-sm transition-all hover:bg-yellow-500">RUN</button>
         </div>
 
         <div class="p-4 pt-2 flex flex-col gap-6">
-            
-            <!-- Horizontal Section -->
             <section>
                 <h3 class="text-gray-400 text-xs mb-3">Horizontal</h3>
                 <div class="flex border border-gray-700 rounded-sm overflow-hidden h-8 mb-2">
@@ -176,17 +164,10 @@
                     <button class="w-10 bg-[#1a1a1a] text-gray-400 hover:bg-[#333] hover:text-white transition text-lg flex items-center justify-center" id="btn-hpos-plus">+</button>
                 </div>
             </section>
-
             <hr class="border-gray-700">
-
-            <!-- Vertical Section -->
             <section>
                 <div class="flex justify-between items-center mb-3">
                     <h3 class="text-gray-400 text-xs">Vertical</h3>
-                    <div class="flex border border-gray-700 rounded-sm overflow-hidden text-[10px] font-bold w-24 h-6">
-                        <button class="flex-1 bg-yellow-400 text-black">CH1</button>
-                        <button class="flex-1 bg-[#1a1a1a] text-gray-600 cursor-not-allowed" title="Hardware limited to 1 Channel">CH2</button>
-                    </div>
                 </div>
                 <div class="flex border border-gray-700 rounded-sm overflow-hidden h-8 mb-2">
                     <button class="w-10 bg-[#1a1a1a] text-gray-400 hover:bg-[#333] hover:text-white transition text-lg flex items-center justify-center" id="btn-volt-minus">-</button>
@@ -199,31 +180,21 @@
                     <button class="w-10 bg-[#1a1a1a] text-gray-400 hover:bg-[#333] hover:text-white transition text-lg flex items-center justify-center" id="btn-vpos-plus">+</button>
                 </div>
             </section>
-
             <hr class="border-gray-700">
-
-            <!-- Trigger Section -->
             <section>
                 <div class="flex justify-between items-center mb-3">
                     <h3 class="text-gray-400 text-xs">Trigger</h3>
-                    <div class="flex border border-gray-700 rounded-sm overflow-hidden text-[10px] font-bold w-24 h-6">
-                        <button class="flex-1 bg-yellow-400 text-black">CH1</button>
-                        <button class="flex-1 bg-[#1a1a1a] text-gray-600 cursor-not-allowed" title="Hardware limited to 1 Channel">CH2</button>
-                    </div>
                 </div>
-                
                 <div class="flex border border-gray-700 rounded-sm overflow-hidden text-[10px] font-bold mb-3 h-8">
                     <button class="flex-1 bg-[#1a1a1a] text-gray-500 hover:bg-[#222] transition" id="btn-trig-none">NONE</button>
                     <button class="flex-1 bg-yellow-400 text-black transition border-x border-gray-700" id="btn-trig-auto">AUTO</button>
                     <button class="flex-1 bg-[#1a1a1a] text-gray-500 hover:bg-[#222] transition" id="btn-trig-norm">NORM</button>
                 </div>
-
                 <div class="flex border border-gray-700 rounded-sm overflow-hidden h-8 mb-3">
                     <button class="w-10 bg-[#1a1a1a] text-gray-400 hover:bg-[#333] hover:text-white transition text-lg flex items-center justify-center" id="btn-trigl-minus">-</button>
                     <button class="flex-1 bg-[#222] transition text-xs font-bold text-gray-300 border-x border-gray-700 flex items-center justify-center" id="btn-trigl-val">LEVEL</button>
                     <button class="w-10 bg-[#1a1a1a] text-gray-400 hover:bg-[#333] hover:text-white transition text-lg flex items-center justify-center" id="btn-trigl-plus">+</button>
                 </div>
-
                 <div class="flex border border-gray-700 rounded-sm overflow-hidden text-[10px] font-bold h-8">
                     <button class="flex-1 bg-yellow-400 text-black transition border-r border-gray-700" id="btn-edge-rise">RISING EDGE</button>
                     <button class="flex-1 bg-[#1a1a1a] text-gray-500 hover:bg-[#222] transition" id="btn-edge-fall">FALLING EDGE</button>
@@ -241,36 +212,33 @@
         const BUFFER_SIZE = 400;
 
         // --- Scope State & UI Settings ---
-        let isPaused = true; // Default to STOPPED when first opened
-        let isDemoMode = true; // Default to Demo Mode
+        let isPaused = true;
+        let isDemoMode = true; 
         let demoInterval = null;
         let demoPhaseDrift = 0;
-        let hasReceivedData = false; // Prevents rendering wave until actively running
+        let hasReceivedData = false; 
         
-        // Scope core values
         let timebaseUs = 50; 
         let voltsPerDiv = 1.0; 
-        let verticalOffset = 0; // divisions
-        let horizontalOffsetDivs = 0; // divisions
-        let triggerLevelV = 1.65; // Volts
-        let currentEdge = 1; // 1 = Rising, 0 = Falling
-        let triggerMode = 1; // 0 = NONE, 1 = AUTO, 2 = NORM
+        let verticalOffset = 0; 
+        let horizontalOffsetDivs = 0; 
+        let triggerLevelV = 1.65; 
+        let currentEdge = 1; 
+        let triggerMode = 1; 
 
-        // Arrays for standard stepping controls
         const timeSettings = [10, 25, 50, 100, 250, 500, 1000, 2500, 5000];
         const voltSettings = [0.1, 0.2, 0.5, 1.0, 2.0, 5.0];
 
         let lastData = new Uint8Array(BUFFER_SIZE); 
 
         // Grid Constants
-        const hDivs = 12; // 12 horizontal divisions
-        const vDivs = 8;  // 8 vertical divisions
+        const hDivs = 12;
+        const vDivs = 8; 
 
         // FPS tracking
         let frameCount = 0;
         let lastFpsTime = performance.now();
 
-        // Check if device is mobile/touch enabled
         const isMobileDevice = window.matchMedia("(any-pointer: coarse)").matches || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
         // --- DOM Elements ---
@@ -279,7 +247,6 @@
         const overlay = document.getElementById('connectOverlay');
         const connStatus = document.getElementById('connStatus');
 
-        // Text Updates
         const txtTimeDiv = document.getElementById('top-timediv');
         const txtVoltsDiv = document.getElementById('btm-voltsdiv');
         const txtTrigLevel = document.getElementById('btm-triglevel');
@@ -290,20 +257,16 @@
         const svgFullscreen = document.getElementById('svg-fullscreen');
         const txtTrigOffset = document.getElementById('top-trigoffset');
 
-        // Segmented Mode Selector Elements
         const btnModeDemo = document.getElementById('btn-mode-demo');
         const btnModeBle = document.getElementById('btn-mode-ble');
 
-        // Trigger Mode Buttons
         const btnTrigNone = document.getElementById('btn-trig-none');
         const btnTrigAuto = document.getElementById('btn-trig-auto');
         const btnTrigNorm = document.getElementById('btn-trig-norm');
 
-        // Edge Buttons
         const btnEdgeRise = document.getElementById('btn-edge-rise');
         const btnEdgeFall = document.getElementById('btn-edge-fall');
 
-        // Responsive clean SVG paths for fullscreen
         const pathExpand = "M21 21l-6-6 M21 21v-4.8 M21 21h-4.8 M3 16.2V21 M3 21h4.8 M3 21l6-6 M21 7.8V3 M21 3h-4.8 M21 3l-6 6 M3 7.8V3 M3 3h4.8 M3 3l6 6";
         const pathShrink = "M15 15l6 6 M15 15v4.8 M15 15h4.8 M9 15v4.8 M9 15H4.2 M9 15l-6 6 M15 9V4.2 M15 9h4.8 M15 9l6-6 M9 9V4.2 M9 9H4.2 M9 9L3 3";
 
@@ -318,7 +281,6 @@
             }
         });
 
-        // Fullscreen Toggle Event
         btnFullscreen.addEventListener('click', () => {
             if (!document.fullscreenElement) {
                 document.documentElement.requestFullscreen().catch(e => console.log(e));
@@ -327,32 +289,27 @@
             }
         });
 
-        // Resize Canvas
         function resizeCanvas() {
             const rect = canvas.parentElement.getBoundingClientRect();
             canvas.width = rect.width;
             canvas.height = rect.height;
-            drawGraticule(); // Redraw grid immediately
+            drawGraticule();
         }
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
 
-        // --- Demo Mode Logic ---
         function generateDemoWave() {
             if (!isDemoMode || isPaused) return;
             const data = new Uint8Array(BUFFER_SIZE);
             
-            // Calculate cycles to simulate a perfect 1kHz sine wave
             let delayUs = timebaseUs + 9;
             let totalCaptureTimeUs = BUFFER_SIZE * delayUs;
-            let wavePeriodUs = 1000; // 1 kHz
+            let wavePeriodUs = 1000;
             
             let cycles = Math.round(totalCaptureTimeUs / wavePeriodUs);
             if (cycles < 1) cycles = 1;
             
             let phaseInc = (Math.PI * 2 * cycles) / BUFFER_SIZE;
-
-            // Trigger simulation
             let trig8bit = Math.floor((triggerLevelV / 3.3) * 255);
             let trigOffset = (trig8bit - 127) / 80; 
             let isTriggerValid = (trigOffset >= -1 && trigOffset <= 1);
@@ -360,19 +317,16 @@
             let startPhase = 0;
             
             if (triggerMode === 0) {
-                // NONE: Always Free run 
                 demoPhaseDrift += 0.15;
                 startPhase = demoPhaseDrift;
             } else if (triggerMode === 2) {
-                // NORM: Only update if a valid trigger exists, otherwise freeze
                 if (isTriggerValid) {
                     startPhase = Math.asin(trigOffset);
                     if (currentEdge === 0) startPhase = Math.PI - startPhase; 
                 } else {
-                    return; // FREEZE! Do not render new data.
+                    return; 
                 }
             } else {
-                // AUTO: Lock if valid, Free run if invalid
                 if (isTriggerValid) {
                     startPhase = Math.asin(trigOffset);
                     if (currentEdge === 0) startPhase = Math.PI - startPhase; 
@@ -384,7 +338,7 @@
 
             for(let i = 0; i < BUFFER_SIZE; i++) {
                 let val = 127 + Math.sin(startPhase + i * phaseInc) * 80;
-                val += (Math.random() * 3 - 1.5); // Tiny electrical noise
+                val += (Math.random() * 3 - 1.5); 
                 data[i] = val;
             }
             
@@ -404,23 +358,17 @@
 
         function updateDemoUI() {
             if (isDemoMode) {
-                // Style Segmented Controls: DEMO is Selected
                 btnModeDemo.className = "px-3 py-1 transition-all bg-yellow-400 text-black font-bold cursor-pointer";
                 btnModeBle.className = "px-3 py-1 transition-all bg-[#1a1a1a] text-gray-500 hover:text-gray-300 cursor-pointer";
-                
                 overlay.style.display = 'none';
                 updateRunStateUI();
-                
-                if (!demoInterval) demoInterval = setInterval(generateDemoWave, 33); // ~30 FPS
+                if (!demoInterval) demoInterval = setInterval(generateDemoWave, 33);
             } else {
                 if (demoInterval) {
                     clearInterval(demoInterval);
                     demoInterval = null;
                 }
-                
-                // Style Segmented Controls: BLE is Selected
                 btnModeDemo.className = "px-3 py-1 transition-all bg-[#1a1a1a] text-gray-500 hover:text-gray-300 cursor-pointer";
-
                 if (bleDevice && bleDevice.gatt.connected) {
                     btnModeBle.className = "px-3 py-1 transition-all bg-emerald-500 text-white font-bold cursor-pointer";
                     overlay.style.display = 'none';
@@ -433,21 +381,10 @@
             }
         }
 
-        // Mode segmented buttons click listeners
-        btnModeDemo.addEventListener('click', () => {
-            isDemoMode = true;
-            updateDemoUI();
-        });
+        btnModeDemo.addEventListener('click', () => { isDemoMode = true; updateDemoUI(); });
+        btnModeBle.addEventListener('click', () => { isDemoMode = false; updateDemoUI(); });
 
-        btnModeBle.addEventListener('click', () => {
-            isDemoMode = false;
-            updateDemoUI();
-        });
-
-        // --- Bluetooth Logic & Browser Compatibility Check ---
         const connectBtn = document.getElementById('connectBtn');
-        
-        // Disable connection if the browser doesn't support Web Bluetooth (e.g., iOS Safari)
         if (!navigator.bluetooth) {
             connectBtn.disabled = true;
             connectBtn.textContent = "BROWSER UNSUPPORTED";
@@ -461,7 +398,6 @@
         connectBtn.addEventListener('click', async () => {
             try {
                 connStatus.textContent = "Requesting device (Check browser popup)...";
-                
                 bleDevice = await navigator.bluetooth.requestDevice({
                     filters: [{ services: [SERVICE_UUID] }]
                 });
@@ -492,7 +428,6 @@
             }
         });
 
-        // Disconnect
         function onDisconnect() {
             connStatus.textContent = "Connection lost. Please reconnect.";
             isPaused = true;
@@ -500,15 +435,42 @@
             updateDemoUI(); 
         }
 
+
+        // NEW: Chunking Buffer Logic for Windows Bluetooth Compatibility
+        let bleRxBuffer = new Uint8Array(BUFFER_SIZE);
+        let bleRxIndex = 0;
+
         function handleNotifications(event) {
             if (isPaused || isDemoMode) return; 
-            const data = new Uint8Array(event.target.value.buffer);
-            if(data.length === BUFFER_SIZE) {
-                hasReceivedData = true;
-                lastData.set(data);
-                drawWaveform(data);
-                calculateStats(data);
+            
+            const incomingData = new Uint8Array(event.target.value.buffer);
+            
+            // If the browser/OS negotiated MTU properly, it arrives in one perfect 400-byte chunk
+            if (incomingData.length === BUFFER_SIZE) {
+                processCompleteFrame(incomingData);
+                return;
             }
+            
+            // If the browser/OS fails MTU negotiation (Very common on Windows), 
+            // it fragments the data into ~20-byte chunks. We catch them in a bucket here:
+            for(let i = 0; i < incomingData.length; i++) {
+                if(bleRxIndex < BUFFER_SIZE) {
+                    bleRxBuffer[bleRxIndex++] = incomingData[i];
+                }
+                
+                // Once the bucket fills up to 400, process the complete wave!
+                if (bleRxIndex >= BUFFER_SIZE) {
+                    processCompleteFrame(bleRxBuffer);
+                    bleRxIndex = 0; // Empty the bucket for the next wave
+                }
+            }
+        }
+
+        function processCompleteFrame(data) {
+            hasReceivedData = true;
+            lastData.set(data);
+            drawWaveform(data);
+            calculateStats(data);
             
             frameCount++;
             let now = performance.now();
@@ -539,7 +501,6 @@
             setTimeout(() => sendCommand("P" + (isPaused ? "1" : "0")), 200);
         }
 
-        // --- Custom Value Modal / Inline Editing Logic ---
         const valueModal = document.getElementById('valueModal');
         const modalTitle = document.getElementById('modalTitle');
         const modalInput = document.getElementById('modalInput');
@@ -575,42 +536,27 @@
             if (e.key === 'Escape') modalCancel.click();
         });
 
-        // Formatter Helper to display clean readable numbers on the button itself while dragging
         function formatValueForBtn(btnId, val) {
             if (btnId === 'btn-time-val') {
-                if (val >= 1000) {
-                    return (val / 1000).toFixed(1).replace('.0', '') + "ms";
-                } else {
-                    return Math.round(val) + "us";
-                }
+                if (val >= 1000) return (val / 1000).toFixed(1).replace('.0', '') + "ms";
+                else return Math.round(val) + "us";
             }
-            if (btnId === 'btn-hpos-val' || btnId === 'btn-vpos-val') {
-                return (val >= 0 ? '+' : '') + val.toFixed(1) + " div";
-            }
-            if (btnId === 'btn-volt-val') {
-                return val.toFixed(2) + "V";
-            }
-            if (btnId === 'btn-trigl-val') {
-                return val.toFixed(2) + "V";
-            }
+            if (btnId === 'btn-hpos-val' || btnId === 'btn-vpos-val') return (val >= 0 ? '+' : '') + val.toFixed(1) + " div";
+            if (btnId === 'btn-volt-val') return val.toFixed(2) + "V";
+            if (btnId === 'btn-trigl-val') return val.toFixed(2) + "V";
             return val.toFixed(2);
         }
 
-        // Smart Input Binder (Combines Horizontal Dragging + Live Value Display + Typing Interaction)
         function bindSmartInput(btnId, title, getVal, callback, dragConfig = { type: 'linear', step: 0.05 }) {
             const btn = document.getElementById(btnId);
             btn.classList.add('btn-draggable');
             const originalText = btn.textContent;
-
-            let startX = 0;
-            let startVal = 0;
-            let hasDragged = false;
+            let startX = 0, startVal = 0, hasDragged = false;
 
             const applyDragVisuals = (newVal) => {
                 btn.textContent = formatValueForBtn(btnId, newVal);
-                btn.classList.add('font-osd', 'text-[#fbbf24]');
+                btn.classList.add('font-osd', 'text-[#fbbf24]', 'bg-[#333]');
                 btn.classList.remove('bg-[#222]', 'text-gray-300');
-                btn.classList.add('bg-[#333]'); // Locked hover state
             };
 
             const clearDragVisuals = () => {
@@ -619,132 +565,51 @@
                 btn.classList.add('bg-[#222]', 'text-gray-300');
             };
 
-            // PC Mouse Dragging Mechanics
             const onMouseDown = (e) => {
-                if (e.button !== 0) return; // Only left clicks
-                if (btn.querySelector('input')) return; // Ignore if typing
-
-                startX = e.clientX;
-                startVal = getVal();
-                hasDragged = false;
-
-                document.body.style.cursor = 'ew-resize';
-                document.body.style.userSelect = 'none';
+                if (e.button !== 0 || btn.querySelector('input')) return; 
+                startX = e.clientX; startVal = getVal(); hasDragged = false;
+                document.body.style.cursor = 'ew-resize'; document.body.style.userSelect = 'none';
 
                 const onMouseMove = (moveEvent) => {
                     const deltaX = moveEvent.clientX - startX;
-                    if (!hasDragged && Math.abs(deltaX) > 4) {
-                        hasDragged = true;
-                    }
-
+                    if (!hasDragged && Math.abs(deltaX) > 4) hasDragged = true;
                     if (hasDragged) {
-                        let newVal = startVal;
-                        if (dragConfig.type === 'proportional') {
-                            newVal = startVal * Math.pow(1.006, deltaX);
-                        } else {
-                            newVal = startVal + deltaX * dragConfig.step;
-                        }
-
+                        let newVal = dragConfig.type === 'proportional' ? startVal * Math.pow(1.006, deltaX) : startVal + deltaX * dragConfig.step;
                         if (dragConfig.min !== undefined) newVal = Math.max(dragConfig.min, newVal);
                         if (dragConfig.max !== undefined) newVal = Math.min(dragConfig.max, newVal);
-
-                        callback(newVal);
-                        applyDragVisuals(newVal);
+                        callback(newVal); applyDragVisuals(newVal);
                     }
                 };
 
                 const onMouseUp = () => {
                     window.removeEventListener('mousemove', onMouseMove);
                     window.removeEventListener('mouseup', onMouseUp);
-                    document.body.style.cursor = '';
-                    document.body.style.userSelect = '';
-
-                    if (hasDragged) {
-                        clearDragVisuals();
-                    } else {
-                        triggerClickAction();
-                    }
+                    document.body.style.cursor = ''; document.body.style.userSelect = '';
+                    if (hasDragged) clearDragVisuals(); else triggerClickAction();
                 };
-
                 window.addEventListener('mousemove', onMouseMove);
                 window.addEventListener('mouseup', onMouseUp);
             };
 
-            // Touch Screen Swiping Mechanics
-            const onTouchStart = (e) => {
-                if (btn.querySelector('input')) return;
-                if (e.touches.length !== 1) return;
-
-                startX = e.touches[0].clientX;
-                startVal = getVal();
-                hasDragged = false;
-
-                const onTouchMove = (moveEvent) => {
-                    if (moveEvent.touches.length !== 1) return;
-                    const deltaX = moveEvent.touches[0].clientX - startX;
-                    if (!hasDragged && Math.abs(deltaX) > 6) {
-                        hasDragged = true;
-                    }
-
-                    if (hasDragged) {
-                        moveEvent.preventDefault(); // Prevent body scroll bounce
-                        let newVal = startVal;
-                        if (dragConfig.type === 'proportional') {
-                            newVal = startVal * Math.pow(1.008, deltaX);
-                        } else {
-                            newVal = startVal + deltaX * dragConfig.step;
-                        }
-
-                        if (dragConfig.min !== undefined) newVal = Math.max(dragConfig.min, newVal);
-                        if (dragConfig.max !== undefined) newVal = Math.min(dragConfig.max, newVal);
-
-                        callback(newVal);
-                        applyDragVisuals(newVal);
-                    }
-                };
-
-                const onTouchEnd = () => {
-                    window.removeEventListener('touchmove', onTouchMove);
-                    window.removeEventListener('touchend', onTouchEnd);
-
-                    if (hasDragged) {
-                        clearDragVisuals();
-                    } else {
-                        triggerClickAction();
-                    }
-                };
-
-                window.addEventListener('touchmove', onTouchMove, { passive: false });
-                window.addEventListener('touchend', onTouchEnd);
-            };
-
-            // Keyboard/typing direct numerical edits
             const triggerClickAction = () => {
                 if (isMobileDevice) {
                     openValueModal(title, getVal(), callback);
                 } else {
                     if (btn.querySelector('input')) return; 
-
                     const inlineInput = document.createElement('input');
-                    inlineInput.type = 'number';
-                    inlineInput.step = 'any';
+                    inlineInput.type = 'number'; inlineInput.step = 'any';
                     inlineInput.value = getVal().toFixed(2).replace(/\.00$/, '');
                     inlineInput.className = 'w-full h-full bg-[#111111] text-center text-[#fbbf24] outline-none font-osd rounded-sm px-1';
-                    
-                    btn.textContent = '';
-                    btn.appendChild(inlineInput);
-                    inlineInput.focus();
-                    inlineInput.select();
+                    btn.textContent = ''; btn.appendChild(inlineInput);
+                    inlineInput.focus(); inlineInput.select();
 
                     let isDone = false;
                     const finishEdit = (saveVal) => {
-                        if (isDone) return;
-                        isDone = true;
+                        if (isDone) return; isDone = true;
                         const val = parseFloat(inlineInput.value);
                         btn.textContent = originalText;
                         if (saveVal && !isNaN(val)) callback(val);
                     };
-
                     inlineInput.addEventListener('blur', () => finishEdit(true));
                     inlineInput.addEventListener('keydown', (e) => {
                         if (e.key === 'Enter') finishEdit(true);
@@ -752,97 +617,36 @@
                     });
                 }
             };
-
             btn.addEventListener('mousedown', onMouseDown);
-            btn.addEventListener('touchstart', onTouchStart, { passive: true });
         }
 
-        // Bind middle control buttons to Drag/Smart-input mechanics
         bindSmartInput('btn-time-val', 'Time/div (µs)', () => timebaseUs, (newVal) => {
-            timebaseUs = Math.max(1, newVal); 
-            updateLabels();
-            sendCommand("T" + Math.round(timebaseUs));
+            timebaseUs = Math.max(1, newVal); updateLabels(); sendCommand("T" + Math.round(timebaseUs));
         }, { type: 'proportional', min: 1, max: 100000 });
 
         bindSmartInput('btn-hpos-val', 'Horizontal Position (divs)', () => horizontalOffsetDivs, (newVal) => {
-            horizontalOffsetDivs = Math.max(-10, Math.min(10, newVal));
-            updateHorizontalOffsetUI();
+            horizontalOffsetDivs = Math.max(-10, Math.min(10, newVal)); updateHorizontalOffsetUI();
         }, { type: 'linear', step: 0.04, min: -10, max: 10 });
 
         bindSmartInput('btn-volt-val', 'CH1 Volts/div', () => voltsPerDiv, (newVal) => {
-            voltsPerDiv = Math.max(0.01, newVal);
-            updateLabels();
+            voltsPerDiv = Math.max(0.01, newVal); updateLabels();
         }, { type: 'proportional', min: 0.01, max: 50 });
 
         bindSmartInput('btn-vpos-val', 'Vertical Position (divs)', () => verticalOffset, (newVal) => {
-            verticalOffset = newVal;
-            drawWaveform(lastData);
+            verticalOffset = newVal; drawWaveform(lastData);
         }, { type: 'linear', step: 0.04, min: -15, max: 15 });
 
         bindSmartInput('btn-trigl-val', 'Trigger Level (V)', () => triggerLevelV, (newVal) => {
             triggerLevelV = Math.max(0, Math.min(3.3, newVal));
-            let trig8bit = Math.floor((triggerLevelV / 3.3) * 255);
-            sendCommand("L" + trig8bit);
-            updateLabels();
+            sendCommand("L" + Math.floor((triggerLevelV / 3.3) * 255)); updateLabels();
         }, { type: 'linear', step: 0.012, min: 0, max: 3.3 });
 
-        // --- Interactive Trigger Offset Readout Click ---
-        txtTrigOffset.addEventListener('click', () => {
-            if (isMobileDevice) {
-                openValueModal('Horizontal Offset (divs)', horizontalOffsetDivs, (newVal) => {
-                    horizontalOffsetDivs = Math.max(-10, Math.min(10, newVal));
-                    updateHorizontalOffsetUI();
-                });
-            } else {
-                if (txtTrigOffset.querySelector('input')) return; // Already editing
-
-                const inlineInput = document.createElement('input');
-                inlineInput.type = 'number';
-                inlineInput.step = 'any';
-                inlineInput.value = horizontalOffsetDivs.toFixed(1);
-                inlineInput.className = 'bg-[#111111] text-[#fbbf24] outline-none font-osd text-center rounded-sm w-14 h-5 border border-gray-700 text-xs inline-block align-middle';
-
-                txtTrigOffset.textContent = '';
-                txtTrigOffset.appendChild(inlineInput);
-                inlineInput.focus();
-                inlineInput.select();
-
-                let isDone = false;
-                const finishEdit = (saveVal) => {
-                    if (isDone) return;
-                    isDone = true;
-                    const val = parseFloat(inlineInput.value);
-                    if (saveVal && !isNaN(val)) {
-                        horizontalOffsetDivs = Math.max(-10, Math.min(10, val));
-                    }
-                    updateHorizontalOffsetUI();
-                };
-
-                inlineInput.addEventListener('blur', () => finishEdit(true));
-                inlineInput.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter') finishEdit(true);
-                    if (e.key === 'Escape') finishEdit(false);
-                });
-            }
-        });
-
-        // --- UI Interactions ---
         function updateLabels() {
-            if (timebaseUs >= 1000) {
-                txtTimeDiv.textContent = (timebaseUs / 1000).toFixed(1).replace('.0', '') + "ms/div";
-            } else {
-                txtTimeDiv.textContent = Math.round(timebaseUs) + "us/div";
-            }
-
+            txtTimeDiv.textContent = timebaseUs >= 1000 ? (timebaseUs / 1000).toFixed(1).replace('.0', '') + "ms/div" : Math.round(timebaseUs) + "us/div";
             txtVoltsDiv.textContent = voltsPerDiv.toFixed(2) + "V/div";
             txtTrigLevel.textContent = triggerLevelV.toFixed(2) + "V";
-            
-            let delayUs = timebaseUs + 9; 
-            let sr = 1000000 / delayUs;
-            txtSampleRate.textContent = (sr / 1000).toFixed(1) + " kS/s";
-            
-            if (lastData && lastData.length > 0) drawWaveform(lastData);
-            else drawGraticule(); 
+            txtSampleRate.textContent = ((1000000 / (timebaseUs + 9)) / 1000).toFixed(1) + " kS/s";
+            if (lastData && lastData.length > 0) drawWaveform(lastData); else drawGraticule(); 
         }
 
         function updateRunStateUI() {
@@ -854,34 +658,27 @@
             } else {
                 btnRunStop.textContent = "STOP";
                 btnRunStop.className = "w-full bg-[#1a1a1a] text-gray-400 border border-gray-700 rounded-sm font-bold py-2 text-sm transition-all hover:bg-[#222] hover:text-white";
-                
-                let modeStr = triggerMode === 0 ? "FREE RUN" : (triggerMode === 1 ? "AUTO TRIG" : "NORM TRIG");
-                txtRunState.textContent = "RUNNING - " + modeStr;
+                txtRunState.textContent = "RUNNING - " + (triggerMode === 0 ? "FREE RUN" : (triggerMode === 1 ? "AUTO TRIG" : "NORM TRIG"));
                 txtRunState.className = "text-gray-300 font-bold";
             }
         }
 
         btnRunStop.addEventListener('click', () => {
-            isPaused = !isPaused;
-            updateRunStateUI();
-            sendCommand("P" + (isPaused ? "1" : "0"));
+            isPaused = !isPaused; updateRunStateUI(); sendCommand("P" + (isPaused ? "1" : "0"));
         });
 
-        // Trigger Modes Setup
         function setTriggerMode(mode) {
             triggerMode = mode;
             btnTrigNone.className = mode === 0 ? "flex-1 bg-yellow-400 text-black transition" : "flex-1 bg-[#1a1a1a] text-gray-500 hover:bg-[#222] transition";
             btnTrigAuto.className = mode === 1 ? "flex-1 bg-yellow-400 text-black transition border-x border-gray-700" : "flex-1 bg-[#1a1a1a] text-gray-500 hover:bg-[#222] transition border-x border-gray-700";
             btnTrigNorm.className = mode === 2 ? "flex-1 bg-yellow-400 text-black transition" : "flex-1 bg-[#1a1a1a] text-gray-500 hover:bg-[#222] transition";
-            updateRunStateUI();
-            sendCommand("M" + mode);
+            updateRunStateUI(); sendCommand("M" + mode);
         }
 
         btnTrigNone.addEventListener('click', () => setTriggerMode(0));
         btnTrigAuto.addEventListener('click', () => setTriggerMode(1));
         btnTrigNorm.addEventListener('click', () => setTriggerMode(2));
 
-        // + / - Buttons Logic (Corrected Math: + increases value / zooms out scale, - decreases value / zooms in scale)
         document.getElementById('btn-time-minus').addEventListener('click', () => {
             let next = [...timeSettings].reverse().find(t => t < timebaseUs - 0.1);
             if(next) { timebaseUs = next; updateLabels(); sendCommand("T" + Math.round(timebaseUs)); }
@@ -901,290 +698,99 @@
         });
 
         function updateHorizontalOffsetUI() {
-            let sign = horizontalOffsetDivs >= 0 ? '+' : '';
-            txtTrigOffset.textContent = sign + horizontalOffsetDivs.toFixed(1) + " divs";
+            txtTrigOffset.textContent = (horizontalOffsetDivs >= 0 ? '+' : '') + horizontalOffsetDivs.toFixed(1) + " divs";
             drawWaveform(lastData);
         }
 
-        document.getElementById('btn-hpos-minus').addEventListener('click', () => {
-            horizontalOffsetDivs = Math.max(-5, horizontalOffsetDivs - 0.1);
-            updateHorizontalOffsetUI();
-        });
-        document.getElementById('btn-hpos-plus').addEventListener('click', () => {
-            horizontalOffsetDivs = Math.min(5, horizontalOffsetDivs + 0.1);
-            updateHorizontalOffsetUI();
-        });
+        document.getElementById('btn-hpos-minus').addEventListener('click', () => { horizontalOffsetDivs = Math.max(-5, horizontalOffsetDivs - 0.1); updateHorizontalOffsetUI(); });
+        document.getElementById('btn-hpos-plus').addEventListener('click', () => { horizontalOffsetDivs = Math.min(5, horizontalOffsetDivs + 0.1); updateHorizontalOffsetUI(); });
+        document.getElementById('btn-vpos-minus').addEventListener('click', () => { verticalOffset -= 0.5; drawWaveform(lastData); });
+        document.getElementById('btn-vpos-plus').addEventListener('click', () => { verticalOffset += 0.5; drawWaveform(lastData); });
 
-        document.getElementById('btn-vpos-minus').addEventListener('click', () => {
-            verticalOffset -= 0.5; drawWaveform(lastData);
-        });
-        document.getElementById('btn-vpos-plus').addEventListener('click', () => {
-            verticalOffset += 0.5; drawWaveform(lastData);
-        });
-
-        // --- Canvas Dragging (Waveform Pan) Logic ---
-        let isDragging = false;
-        let lastDragX = 0;
-        let lastDragY = 0;
-        let dragAxis = null; 
-        let startDragX = 0;
-        let startDragY = 0;
-        const DRAG_THRESHOLD = 5; 
-
-        // Helper functions to temporarily highlight menu buttons during canvas drag
-        function highlightMenuPos(btnId, val) {
-            const btn = document.getElementById(btnId);
-            if (!btn) return;
-            btn.textContent = formatValueForBtn(btnId, val);
-            btn.classList.add('font-osd', 'text-[#fbbf24]', 'bg-[#333]');
-            btn.classList.remove('bg-[#222]', 'text-gray-300');
-        }
-
-        function resetMenuPos(btnId) {
-            const btn = document.getElementById(btnId);
-            if (!btn) return;
-            btn.textContent = "POSITION";
-            btn.classList.remove('font-osd', 'text-[#fbbf24]', 'bg-[#333]');
-            btn.classList.add('bg-[#222]', 'text-gray-300');
-        }
-
-        const handleDragStart = (clientX, clientY) => {
-            isDragging = true;
-            startDragX = clientX;
-            startDragY = clientY;
-            lastDragX = clientX;
-            lastDragY = clientY;
-            dragAxis = null;
-            canvas.style.cursor = 'move'; 
-        };
-
-        const handleDragMove = (clientX, clientY) => {
+        // --- Canvas Dragging ---
+        let isDragging = false, lastDragX = 0, lastDragY = 0, dragAxis = null, startDragX = 0, startDragY = 0;
+        const handleDragStart = (x, y) => { isDragging = true; startDragX = x; startDragY = y; lastDragX = x; lastDragY = y; dragAxis = null; canvas.style.cursor = 'move'; };
+        const handleDragMove = (x, y) => {
             if (!isDragging) return;
-            
-            const rect = canvas.getBoundingClientRect();
-            const dx_px = rect.width / hDivs;
-            const dy_px = rect.height / vDivs;
-
-            const deltaX = clientX - lastDragX;
-            const deltaY = clientY - lastDragY;
-
-            if (!dragAxis) {
-                const distX = Math.abs(clientX - startDragX);
-                const distY = Math.abs(clientY - startDragY);
-                if (distX > DRAG_THRESHOLD || distY > DRAG_THRESHOLD) {
-                    dragAxis = distX > distY ? 'x' : 'y';
-                    canvas.style.cursor = dragAxis === 'x' ? 'ew-resize' : 'ns-resize';
-                }
-            }
-
-            lastDragX = clientX;
-            lastDragY = clientY;
-
-            if (dragAxis === 'x') {
-                horizontalOffsetDivs += (deltaX / dx_px);
-                horizontalOffsetDivs = Math.max(-5, Math.min(5, horizontalOffsetDivs)); 
-                updateHorizontalOffsetUI(); 
-                highlightMenuPos('btn-hpos-val', horizontalOffsetDivs);
-                resetMenuPos('btn-vpos-val');
-            } else if (dragAxis === 'y') {
-                verticalOffset -= (deltaY / dy_px);
-                drawWaveform(lastData); 
-                highlightMenuPos('btn-vpos-val', verticalOffset);
-                resetMenuPos('btn-hpos-val');
-            }
+            const rect = canvas.getBoundingClientRect(), dx_px = rect.width / hDivs, dy_px = rect.height / vDivs;
+            const deltaX = x - lastDragX, deltaY = y - lastDragY;
+            if (!dragAxis && (Math.abs(x - startDragX) > 5 || Math.abs(y - startDragY) > 5)) { dragAxis = Math.abs(x - startDragX) > Math.abs(y - startDragY) ? 'x' : 'y'; canvas.style.cursor = dragAxis === 'x' ? 'ew-resize' : 'ns-resize'; }
+            lastDragX = x; lastDragY = y;
+            if (dragAxis === 'x') { horizontalOffsetDivs = Math.max(-5, Math.min(5, horizontalOffsetDivs + (deltaX / dx_px))); updateHorizontalOffsetUI(); }
+            else if (dragAxis === 'y') { verticalOffset -= (deltaY / dy_px); drawWaveform(lastData); }
         };
-
-        const handleDragEnd = () => {
-            isDragging = false;
-            dragAxis = null;
-            canvas.style.cursor = 'move'; 
-            resetMenuPos('btn-hpos-val');
-            resetMenuPos('btn-vpos-val');
-        };
+        const handleDragEnd = () => { isDragging = false; dragAxis = null; canvas.style.cursor = 'move'; };
 
         canvas.addEventListener('mousedown', (e) => handleDragStart(e.clientX, e.clientY));
         window.addEventListener('mousemove', (e) => handleDragMove(e.clientX, e.clientY));
         window.addEventListener('mouseup', handleDragEnd);
 
-        canvas.addEventListener('touchstart', (e) => {
-            if (e.touches.length === 1) handleDragStart(e.touches[0].clientX, e.touches[0].clientY);
-        }, { passive: false });
-        window.addEventListener('touchmove', (e) => {
-            if (isDragging && e.touches.length === 1) {
-                e.preventDefault(); 
-                handleDragMove(e.touches[0].clientX, e.touches[0].clientY);
-            }
-        }, { passive: false });
-        window.addEventListener('touchend', handleDragEnd);
+        document.getElementById('btn-trigl-minus').addEventListener('click', () => { triggerLevelV = Math.max(0, triggerLevelV - 0.1); sendCommand("L" + Math.floor((triggerLevelV / 3.3) * 255)); updateLabels(); });
+        document.getElementById('btn-trigl-plus').addEventListener('click', () => { triggerLevelV = Math.min(3.3, triggerLevelV + 0.1); sendCommand("L" + Math.floor((triggerLevelV / 3.3) * 255)); updateLabels(); });
 
-        document.getElementById('btn-trigl-minus').addEventListener('click', () => {
-            triggerLevelV = Math.max(0, triggerLevelV - 0.1);
-            let trig8bit = Math.floor((triggerLevelV / 3.3) * 255);
-            sendCommand("L" + trig8bit);
-            updateLabels();
-        });
-        document.getElementById('btn-trigl-plus').addEventListener('click', () => {
-            triggerLevelV = Math.min(3.3, triggerLevelV + 0.1);
-            let trig8bit = Math.floor((triggerLevelV / 3.3) * 255);
-            sendCommand("L" + trig8bit);
-            updateLabels();
-        });
-
-        btnEdgeRise.addEventListener('click', () => {
-            currentEdge = 1;
-            btnEdgeRise.className = "flex-1 bg-yellow-400 text-black transition border-r border-gray-700";
-            btnEdgeFall.className = "flex-1 bg-[#1a1a1a] text-gray-500 hover:bg-[#222] transition";
-            sendCommand("E1");
-        });
-        btnEdgeFall.addEventListener('click', () => {
-            currentEdge = 0;
-            btnEdgeFall.className = "flex-1 bg-yellow-400 text-black transition";
-            btnEdgeRise.className = "flex-1 bg-[#1a1a1a] text-gray-500 hover:bg-[#222] transition border-r border-gray-700";
-            sendCommand("E0");
-        });
-
-        // --- Drawing Engine ---
+        btnEdgeRise.addEventListener('click', () => { currentEdge = 1; btnEdgeRise.className = "flex-1 bg-yellow-400 text-black transition border-r border-gray-700"; btnEdgeFall.className = "flex-1 bg-[#1a1a1a] text-gray-500 hover:bg-[#222] transition"; sendCommand("E1"); });
+        btnEdgeFall.addEventListener('click', () => { currentEdge = 0; btnEdgeFall.className = "flex-1 bg-yellow-400 text-black transition"; btnEdgeRise.className = "flex-1 bg-[#1a1a1a] text-gray-500 hover:bg-[#222] transition border-r border-gray-700"; sendCommand("E0"); });
 
         function drawGraticule() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            const w = canvas.width;
-            const h = canvas.height;
-            const dx = w / hDivs;
-            const dy = h / vDivs;
-
-            ctx.beginPath();
-            ctx.strokeStyle = '#222222';
-            ctx.lineWidth = 1;
-            
-            for(let i = 1; i < hDivs; i++) {
-                ctx.moveTo(i * dx, 0);
-                ctx.lineTo(i * dx, h);
-            }
-            for(let i = 1; i < vDivs; i++) {
-                ctx.moveTo(0, i * dy);
-                ctx.lineTo(w, i * dy);
-            }
+            const w = canvas.width, h = canvas.height, dx = w / hDivs, dy = h / vDivs;
+            ctx.beginPath(); ctx.strokeStyle = '#222222'; ctx.lineWidth = 1;
+            for(let i = 1; i < hDivs; i++) { ctx.moveTo(i * dx, 0); ctx.lineTo(i * dx, h); }
+            for(let i = 1; i < vDivs; i++) { ctx.moveTo(0, i * dy); ctx.lineTo(w, i * dy); }
             ctx.stroke();
 
-            ctx.beginPath();
-            ctx.strokeStyle = '#444444';
-            
-            let centerY = h / 2;
-            ctx.moveTo(0, centerY);
-            ctx.lineTo(w, centerY);
-            
-            let centerX = w / 2;
-            ctx.moveTo(centerX, 0);
-            ctx.lineTo(centerX, h);
-
-            for(let i = 0; i < hDivs * 5; i++) {
-                let tickX = i * (dx / 5);
-                let tickLen = (i % 5 === 0) ? 6 : 3;
-                ctx.moveTo(tickX, centerY - tickLen);
-                ctx.lineTo(tickX, centerY + tickLen);
-            }
-            
-            for(let i = 0; i < vDivs * 5; i++) {
-                let tickY = i * (dy / 5);
-                let tickLen = (i % 5 === 0) ? 6 : 3;
-                ctx.moveTo(centerX - tickLen, tickY);
-                ctx.lineTo(centerX + tickLen, tickY);
-            }
+            ctx.beginPath(); ctx.strokeStyle = '#444444';
+            let centerY = h / 2, centerX = w / 2;
+            ctx.moveTo(0, centerY); ctx.lineTo(w, centerY); ctx.moveTo(centerX, 0); ctx.lineTo(centerX, h);
+            for(let i = 0; i < hDivs * 5; i++) { let tickX = i * (dx / 5), tickLen = (i % 5 === 0) ? 6 : 3; ctx.moveTo(tickX, centerY - tickLen); ctx.lineTo(tickX, centerY + tickLen); }
+            for(let i = 0; i < vDivs * 5; i++) { let tickY = i * (dy / 5), tickLen = (i % 5 === 0) ? 6 : 3; ctx.moveTo(centerX - tickLen, tickY); ctx.lineTo(centerX + tickLen, tickY); }
             ctx.stroke();
         }
 
         function drawWaveform(data) {
-            if (!hasReceivedData || !data || data.length === 0) {
-                drawGraticule();
-                return;
-            }
+            if (!hasReceivedData || !data || data.length === 0) { drawGraticule(); return; }
             drawGraticule();
-            
-            const w = canvas.width;
-            const h = canvas.height;
-            const dx = w / hDivs;
-            const dy = h / vDivs;
-            let pixelPerVolt = dy / voltsPerDiv;
-            
-            let zeroVoltY = (h/2) + (1.65 * pixelPerVolt) - (verticalOffset * dy);
-            let xOffset = horizontalOffsetDivs * dx;
+            const w = canvas.width, h = canvas.height, dx = w / hDivs, dy = h / vDivs, pixelPerVolt = dy / voltsPerDiv;
+            let zeroVoltY = (h/2) + (1.65 * pixelPerVolt) - (verticalOffset * dy), xOffset = horizontalOffsetDivs * dx;
 
-            ctx.beginPath();
-            ctx.strokeStyle = '#fbbf24'; 
-            ctx.lineWidth = 1.5;
-            ctx.lineJoin = 'round';
-
-            const sliceWidth = w / data.length;
-            let firstPoint = true;
-
+            ctx.beginPath(); ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 1.5; ctx.lineJoin = 'round';
+            const sliceWidth = w / data.length; let firstPoint = true;
             const drawSegment = (startX) => {
                 let x = startX;
                 for (let i = 0; i < data.length; i++) {
-                    let v = (data[i] / 255.0) * 3.3;
-                    let y = zeroVoltY - (v * pixelPerVolt);
-
-                    if (firstPoint) {
-                        ctx.moveTo(x, y);
-                        firstPoint = false;
-                    } else {
-                        ctx.lineTo(x, y);
-                    }
+                    let y = zeroVoltY - (((data[i] / 255.0) * 3.3) * pixelPerVolt);
+                    if (firstPoint) { ctx.moveTo(x, y); firstPoint = false; } else ctx.lineTo(x, y);
                     x += sliceWidth;
                 }
             };
-
             if (xOffset > 0) drawSegment(xOffset - w);
             drawSegment(xOffset);
             if (xOffset < 0) drawSegment(xOffset + w);
-
             ctx.stroke();
         }
 
         function calculateStats(data) {
             let max = 0, min = 255;
-            for(let i=0; i<data.length; i++) {
-                if(data[i] > max) max = data[i];
-                if(data[i] < min) min = data[i];
-            }
-            
-            let vMaxReal = (max / 255.0) * 3.3;
-            let vMinReal = (min / 255.0) * 3.3;
-            let vpp = vMaxReal - vMinReal;
-            
+            for(let i=0; i<data.length; i++) { if(data[i] > max) max = data[i]; if(data[i] < min) min = data[i]; }
+            let vMaxReal = (max / 255.0) * 3.3, vMinReal = (min / 255.0) * 3.3;
             document.getElementById('osd-vmax').textContent = "+" + vMaxReal.toFixed(2) + "V";
             document.getElementById('osd-vmin').textContent = "+" + vMinReal.toFixed(2) + "V";
-            document.getElementById('osd-vpp').textContent = "+" + vpp.toFixed(2) + "V";
+            document.getElementById('osd-vpp').textContent = "+" + (vMaxReal - vMinReal).toFixed(2) + "V";
 
-            let crossings = 0;
-            let firstCrossIdx = -1;
-            let lastCrossIdx = -1;
-            let midPoint = (max + min) / 2;
-            
+            let crossings = 0, firstCrossIdx = -1, lastCrossIdx = -1, midPoint = (max + min) / 2;
             for(let i=1; i<data.length; i++) {
                 if(data[i-1] < midPoint && data[i] >= midPoint) {
                     if(firstCrossIdx === -1) firstCrossIdx = i;
-                    lastCrossIdx = i;
-                    crossings++;
+                    lastCrossIdx = i; crossings++;
                 }
             }
-
             if (crossings > 1) {
-                let samplesPerCycle = (lastCrossIdx - firstCrossIdx) / (crossings - 1);
-                let timePerSample = (timebaseUs + 9) / 1000000.0; 
-                let freq = 1.0 / (samplesPerCycle * timePerSample);
-                
-                let freqText = freq > 999 ? (freq/1000).toFixed(2) + ' kHz' : Math.round(freq) + ' Hz';
-                document.getElementById('osd-freq').textContent = freqText;
-            } else {
-                document.getElementById('osd-freq').textContent = "<1 Hz";
-            }
+                let freq = 1.0 / (((lastCrossIdx - firstCrossIdx) / (crossings - 1)) * ((timebaseUs + 9) / 1000000.0));
+                document.getElementById('osd-freq').textContent = freq > 999 ? (freq/1000).toFixed(2) + ' kHz' : Math.round(freq) + ' Hz';
+            } else { document.getElementById('osd-freq').textContent = "<1 Hz"; }
         }
 
-        // Initialize UI
-        updateLabels();
-        updateDemoUI(); 
-
+        updateLabels(); updateDemoUI(); 
     </script>
 </body>
 </html>
