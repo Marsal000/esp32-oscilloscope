@@ -417,8 +417,10 @@
                 await txCharacteristic.startNotifications();
                 txCharacteristic.addEventListener('characteristicvaluechanged', handleNotifications);
 
+                // --- FIX 1: Prevent automatic starting ---
                 isDemoMode = false;
-                isPaused = false;
+                isPaused = true; // Wait for user to click RUN
+                
                 updateDemoUI();
                 sendAllConfigToESP32();
                 
@@ -435,8 +437,7 @@
             updateDemoUI(); 
         }
 
-
-        // NEW: Chunking Buffer Logic for Windows Bluetooth Compatibility
+        // Chunking Buffer Logic for Windows Bluetooth Compatibility
         let bleRxBuffer = new Uint8Array(BUFFER_SIZE);
         let bleRxIndex = 0;
 
@@ -445,23 +446,19 @@
             
             const incomingData = new Uint8Array(event.target.value.buffer);
             
-            // If the browser/OS negotiated MTU properly, it arrives in one perfect 400-byte chunk
             if (incomingData.length === BUFFER_SIZE) {
                 processCompleteFrame(incomingData);
                 return;
             }
             
-            // If the browser/OS fails MTU negotiation (Very common on Windows), 
-            // it fragments the data into ~20-byte chunks. We catch them in a bucket here:
             for(let i = 0; i < incomingData.length; i++) {
                 if(bleRxIndex < BUFFER_SIZE) {
                     bleRxBuffer[bleRxIndex++] = incomingData[i];
                 }
                 
-                // Once the bucket fills up to 400, process the complete wave!
                 if (bleRxIndex >= BUFFER_SIZE) {
                     processCompleteFrame(bleRxBuffer);
-                    bleRxIndex = 0; // Empty the bucket for the next wave
+                    bleRxIndex = 0; 
                 }
             }
         }
@@ -565,6 +562,7 @@
                 btn.classList.add('bg-[#222]', 'text-gray-300');
             };
 
+            // Mouse Drag (Desktop)
             const onMouseDown = (e) => {
                 if (e.button !== 0 || btn.querySelector('input')) return; 
                 startX = e.clientX; startVal = getVal(); hasDragged = false;
@@ -589,6 +587,35 @@
                 };
                 window.addEventListener('mousemove', onMouseMove);
                 window.addEventListener('mouseup', onMouseUp);
+            };
+
+            // --- FIX 2: Restore Touch Drag (Mobile) ---
+            const onTouchStart = (e) => {
+                if (btn.querySelector('input') || e.touches.length !== 1) return;
+                startX = e.touches[0].clientX; startVal = getVal(); hasDragged = false;
+
+                const onTouchMove = (moveEvent) => {
+                    if (moveEvent.touches.length !== 1) return;
+                    const deltaX = moveEvent.touches[0].clientX - startX;
+                    if (!hasDragged && Math.abs(deltaX) > 6) hasDragged = true;
+
+                    if (hasDragged) {
+                        moveEvent.preventDefault(); // Prevents screen from scrolling while swiping slider
+                        let newVal = dragConfig.type === 'proportional' ? startVal * Math.pow(1.008, deltaX) : startVal + deltaX * dragConfig.step;
+                        if (dragConfig.min !== undefined) newVal = Math.max(dragConfig.min, newVal);
+                        if (dragConfig.max !== undefined) newVal = Math.min(dragConfig.max, newVal);
+                        callback(newVal); applyDragVisuals(newVal);
+                    }
+                };
+
+                const onTouchEnd = () => {
+                    window.removeEventListener('touchmove', onTouchMove);
+                    window.removeEventListener('touchend', onTouchEnd);
+                    if (hasDragged) clearDragVisuals(); else triggerClickAction();
+                };
+
+                window.addEventListener('touchmove', onTouchMove, { passive: false });
+                window.addEventListener('touchend', onTouchEnd);
             };
 
             const triggerClickAction = () => {
@@ -617,7 +644,9 @@
                     });
                 }
             };
+            
             btn.addEventListener('mousedown', onMouseDown);
+            btn.addEventListener('touchstart', onTouchStart, { passive: true }); // Restored Touch Event Listener
         }
 
         bindSmartInput('btn-time-val', 'Time/div (µs)', () => timebaseUs, (newVal) => {
@@ -707,9 +736,11 @@
         document.getElementById('btn-vpos-minus').addEventListener('click', () => { verticalOffset -= 0.5; drawWaveform(lastData); });
         document.getElementById('btn-vpos-plus').addEventListener('click', () => { verticalOffset += 0.5; drawWaveform(lastData); });
 
-        // --- Canvas Dragging ---
+        // --- Canvas Dragging (Also restoring Mobile Touch Support) ---
         let isDragging = false, lastDragX = 0, lastDragY = 0, dragAxis = null, startDragX = 0, startDragY = 0;
+        
         const handleDragStart = (x, y) => { isDragging = true; startDragX = x; startDragY = y; lastDragX = x; lastDragY = y; dragAxis = null; canvas.style.cursor = 'move'; };
+        
         const handleDragMove = (x, y) => {
             if (!isDragging) return;
             const rect = canvas.getBoundingClientRect(), dx_px = rect.width / hDivs, dy_px = rect.height / vDivs;
@@ -721,9 +752,23 @@
         };
         const handleDragEnd = () => { isDragging = false; dragAxis = null; canvas.style.cursor = 'move'; };
 
+        // Desktop Canvas Mouse Events
         canvas.addEventListener('mousedown', (e) => handleDragStart(e.clientX, e.clientY));
         window.addEventListener('mousemove', (e) => handleDragMove(e.clientX, e.clientY));
         window.addEventListener('mouseup', handleDragEnd);
+
+        // Mobile Canvas Touch Events
+        canvas.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) handleDragStart(e.touches[0].clientX, e.touches[0].clientY);
+        }, { passive: false });
+        window.addEventListener('touchmove', (e) => {
+            if (isDragging && e.touches.length === 1) {
+                e.preventDefault(); 
+                handleDragMove(e.touches[0].clientX, e.touches[0].clientY);
+            }
+        }, { passive: false });
+        window.addEventListener('touchend', handleDragEnd);
+
 
         document.getElementById('btn-trigl-minus').addEventListener('click', () => { triggerLevelV = Math.max(0, triggerLevelV - 0.1); sendCommand("L" + Math.floor((triggerLevelV / 3.3) * 255)); updateLabels(); });
         document.getElementById('btn-trigl-plus').addEventListener('click', () => { triggerLevelV = Math.min(3.3, triggerLevelV + 0.1); sendCommand("L" + Math.floor((triggerLevelV / 3.3) * 255)); updateLabels(); });
