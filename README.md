@@ -32,11 +32,6 @@ The project combines an ESP32-based data acquisition system with a responsive HT
   * Vmax
   * Vmin
   * Vpp
-* Demo Mode for testing without hardware
-* Fullscreen Mode
-* Responsive UI for Desktop and Mobile
-* Optimized rendering using `requestAnimationFrame`
-* BLE packet reassembly for reliable waveform streaming
 
 ---
 
@@ -54,11 +49,11 @@ https://marsal000.github.io/esp32-oscilloscope/
 
 | Browser                 | Support                       |
 | ----------------------- | ----------------------------- |
-| Google Chrome (Desktop) | Supported                       |
-| Microsoft Edge          | Supported                       |
-| Chrome on Android       | Supported                             |
-| Firefox                 | Web Bluetooth not supported |
-| Safari                  | Web Bluetooth not supported |
+| Google Chrome (Desktop) | Supported                     |
+| Microsoft Edge          | Supported                     |
+| Chrome on Android       | Supported                     |
+| Firefox                 | Web Bluetooth not supported   |
+| Safari                  | Web Bluetooth not supported   |
 
 > **Note:** Web Bluetooth is currently supported only in Chromium-based browsers.
 
@@ -107,8 +102,8 @@ https://marsal000.github.io/esp32-oscilloscope/
 
 ## License
 
-This repository currently contains only the web application interface.
+This repository is provided for demonstration and evaluation purposes only.
 
-The firmware is not included at this time.
+The web application is publicly viewable, but the source code and associated firmware are not licensed for redistribution or commercial use at this time.
 
 ---
