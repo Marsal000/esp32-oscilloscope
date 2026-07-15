@@ -57,7 +57,7 @@ https://marsal000.github.io/esp32-oscilloscope/
 | Google Chrome (Desktop) | Supported                       |
 | Microsoft Edge          | Supported                       |
 | Chrome on Android       | Supported                             |
-| Firefox                 | Web Bluetooth ot supported |
+| Firefox                 | Web Bluetooth not supported |
 | Safari                  | Web Bluetooth not supported |
 
 > **Note:** Web Bluetooth is currently supported only in Chromium-based browsers.
